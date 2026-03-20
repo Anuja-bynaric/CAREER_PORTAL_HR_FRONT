@@ -7,6 +7,9 @@ import AddDevelopers from './components/AddDevelopers'
 import JobOpening from './components/JobOpening'
 import DisplayCandidate from './components/DisplayCandidate'
 import ScheduleInterview from './components/ScheduleInterview'
+import JobOpeningList from './components/JobOeningList'
+import CandidateProfile from './components/CandidateProfile'
+import EditJob from './components/EditJob'
 
 const App = () => {
   return (
@@ -19,6 +22,9 @@ const App = () => {
         <Route path='/jobOpening' element={<JobOpening/>}/>
         <Route path='/DisplayCandidate' element={<DisplayCandidate/>}/>
         <Route path='/ScheduleInterview' element={<ScheduleInterview/>}/>
+        <Route path='/job_Openings' element={<JobOpeningList/>}/>
+        <Route path='/candidate_Profile' element={<CandidateProfile/>}/>
+        <Route path='/editJob' element={<EditJob/>}/>
       </Routes>
     </Router>
   )
