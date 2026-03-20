@@ -1,9 +1,43 @@
-import React from 'react';
+import React, { useEffect } from 'react'; // Added useEffect
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Users, Briefcase, ClipboardList, ArrowRight } from 'lucide-react';
+import { useSelector } from 'react-redux'; // Added useSelector
+import { Calendar, Users, Briefcase, ClipboardList, ArrowRight,FileUp } from 'lucide-react';
 
 const LandingPage = () => {
   const navigate = useNavigate();
+
+  // 1. Get the token from Redux state
+  const { token } = useSelector((state) => state.auth);
+
+  // 2. Functionality to log token data to console
+  useEffect(() => {
+    if (token) {
+      try {
+        // This decodes the middle part of the JWT (the payload)
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+          window.atob(base64)
+            .split('')
+            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
+        );
+
+        const userData = JSON.parse(jsonPayload);
+        
+        console.log("--- Auth Token Data ---");
+        console.log("Full Token:", token);
+        console.log("Decoded User Info:", userData);
+        console.log("Name:", userData.name);
+        console.log("Email:", userData.email);
+
+      } catch (e) {
+        console.error("Error decoding token:", e);
+      }
+    } else {
+      console.warn("No token found in Redux state.");
+    }
+  }, [token]);
 
   const actions = [
     {
@@ -18,15 +52,22 @@ const LandingPage = () => {
       path: "/addInterviwer",
       description: "Manage your team and assign interviewer roles.",
       icon: <Users size={24} />,
-      bg: "bg-slate-900",
+      bg: "bg-red-600",
     },
+   {
+  title: "Upload Resume",
+  path: "/upload_Resume",
+  description: "Bulk upload candidate resumes in ZIP format for processing.", 
+  icon: <FileUp size={24} />, 
+  bg: "bg-red-600",
+},
    
     {
       title: "Scheduled Interviews",
-      path: "/list_schedule_interview", // Ensure this matches your route
+      path: "/list_schedule_interview", 
       description: "View and manage upcoming interview time slots.",
       icon: <Calendar size={24} />,
-      bg: "bg-slate-900",
+      bg: "bg-red-600",
     }
   ];
 
@@ -45,7 +86,7 @@ const LandingPage = () => {
         </div>
 
         {/* Action Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {actions.map((item, idx) => (
             <div 
               key={idx}
