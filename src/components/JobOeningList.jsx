@@ -10,87 +10,100 @@ const JobOpeningList = () => {
   ]);
 
   const onViewCandidates = (jobId) => {
-    navigate('/DisplayCandidate', { state: { jobId } });
+    navigate(`/DisplayCandidate/${jobId}`, { state: { jobId } });
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] p-8 font-sans">
-      <div className="max-w-7xl mx-auto">
-        
-        {/* Header Section */}
-        <div className="flex justify-between items-center mb-10">
-          <div>
-            <h2 className="text-2xl font-black text-slate-800 tracking-tight uppercase">HR Recruitment Dashboard</h2>
-            <p className="text-slate-500 text-xs font-medium italic mt-1">Manage your job openings and applicants efficiently.</p>
+    <div className="min-h-screen bg-[#f8fafc] flex flex-col font-sans">
+      <div className="flex-grow p-8">
+        <div className="max-w-7xl mx-auto">
+
+          {/* Header Section */}
+          <div className="flex justify-between items-center mb-10">
+            <div>
+              <h2 className="text-xl font-bold text-slate-800 tracking-tight">HR Recruitment Dashboard</h2>
+              <p className="text-slate-500 text-[11px] font-normal mt-1">Manage your job openings and applicants efficiently.</p>
+            </div>
+            <button
+              onClick={() => navigate('/jobOpening')}
+              className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg font-medium text-xs transition-all shadow-md hover:shadow-lg active:scale-95 flex items-center gap-2"
+            >
+              <span className="text-lg">+</span> Post New Job
+            </button>
           </div>
-          <button 
-            onClick={() => navigate('/jobOpening')}
-            className="bg-[#ff0000] hover:bg-red-700 text-white px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-red-100 active:scale-95"
-          >
-            + Post New Job
-          </button>
-        </div>
 
-        {/* Table Container */}
-        <div className="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 overflow-hidden">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-gray-50/50 border-b border-gray-100">
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Job Title</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Posted Date</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Applicants</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {jobs.map((job) => (
-                <tr key={job.id} className="hover:bg-red-50/30 transition-colors group">
-                  <td className="px-6 py-6">
-                    <span 
-                      onClick={() => onViewCandidates(job.id)}
-                      className="text-[#ff0000] font-black text-sm cursor-pointer hover:text-red-700 transition-colors uppercase tracking-tight"
-                    >
-                      {job.title}
-                    </span>
-                  </td>
-                  <td className="px-6 py-6 text-xs text-slate-500 font-bold">{job.postedDate}</td>
-                  <td className="px-6 py-6">
-                    <span className="bg-red-50 text-[#ff0000] px-4 py-1.5 rounded-lg text-[10px] font-black border border-red-100 uppercase tracking-tighter">
-                      {job.applicants} Applied
-                    </span>
-                  </td>
-                  <td className="px-6 py-6">
-                    <span className={`text-[11px] font-black flex items-center gap-2 uppercase ${job.status === 'Active' ? 'text-green-600' : 'text-slate-400'}`}>
-                      <span className={`w-2 h-2 rounded-full ${job.status === 'Active' ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`}></span> 
-                      {job.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-6 flex gap-3">
-                   <button 
-  onClick={() => navigate('/editJob', { state: { job } })} 
-  className="px-5 py-2 border-2 border-slate-100 rounded-xl text-[10px] font-black text-slate-600 uppercase tracking-widest hover:bg-slate-50 transition-all"
->
-  Edit
-</button>
-                    <button 
-                      onClick={() => onViewCandidates(job.id)}
-                      className="px-5 py-2 bg-[#28a745] hover:bg-green-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-md shadow-green-100 active:scale-95"
-                    >
-                      View Candidates
-                    </button>
-                  </td>
+          {/* Table Container */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-slate-50 border-b border-gray-200">
+                  <th className="px-6 py-4 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Job Title</th>
+                  <th className="px-6 py-4 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Posted Date</th>
+                  <th className="px-6 py-4 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Applicants</th>
+                  <th className="px-6 py-4 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-4 text-[11px] font-semibold text-slate-500 uppercase tracking-wider text-center">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {jobs.map((job) => (
+                  <tr key={job.id} className="hover:bg-slate-50/80 transition-colors group">
+                    <td className="px-6 py-5">
+                      <span
+                        onClick={() => onViewCandidates(job.id)}
+                        className="text-slate-800 font-medium text-sm cursor-pointer hover:text-red-600 transition-colors"
+                      >
+                        {job.title}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5 text-xs text-slate-500 font-normal">{job.postedDate}</td>
+                    <td className="px-6 py-5">
+                      <span className="bg-red-50 text-red-600 px-3 py-1 rounded-full text-[10px] font-medium border border-red-100">
+                        {job.applicants} Applied
+                      </span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className={`text-[11px] font-medium flex items-center gap-2 ${job.status === 'Active' ? 'text-green-600' : 'text-slate-400'}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${job.status === 'Active' ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`}></span>
+                        {job.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex justify-center gap-2">
+                        <button
+                          onClick={() => navigate(`/editJob/${job.id}`, { state: { job } })}
+                          className="px-3 py-1.5 text-[11px] font-medium text-slate-600 bg-white border border-slate-200 rounded-md hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => onViewCandidates(job.id)}
+                          className="px-3 py-1.5 text-[11px] font-medium text-white bg-slate-800 rounded-md hover:bg-slate-900 transition-all shadow-sm"
+                        >
+                          View Candidates
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-        {/* Footer Note */}
-        <div className="mt-6 text-center">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Bynaric Career Portal v2.0</p>
+          {/* Footer Note */}
+          <div className="mt-8 text-center">
+            <p className="text-[10px] font-medium text-slate-400 uppercase tracking-[0.2em]">Bynaric Career Portal v2.0</p>
+          </div>
         </div>
       </div>
+
+      {/* Main Footer */}
+      <footer className="w-full bg-black text-white/70 py-12 mt-20">
+        <div className="w-full px-4 text-center">
+          <p className="text-sm md:text-base tracking-wider">
+            © 2022 Bynaric All Rights Reserved. [wps_visitor_counter]
+          </p>
+        </div>
+      </footer>
     </div>
   );
 };

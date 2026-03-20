@@ -11,7 +11,7 @@ const Login = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log("HR Login:", { email, password });
-    navigate('/job_Openings')
+    navigate('/landing')
   };
 
   return (
