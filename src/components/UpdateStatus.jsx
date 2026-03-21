@@ -1,33 +1,38 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, ClipboardEdit } from 'lucide-react';
-import axios from 'axios'; // Added axios
 import { useSelector } from 'react-redux'; 
-import {api} from '../Api/api'
+import { api } from '../Api/api'; 
+import toast from 'react-hot-toast'; // Import toast
 
 const UpdateStatus = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const { candidateId } = useParams();
-  const { token } = useSelector((state) => state.auth); // Pull token from Redux state
+  const { candidateId } = useParams(); 
+  const { token } = useSelector((state) => state.auth); 
   
   const candidate = state?.candidate;
 
-  // Form State - Matches backend valid statuses: pending, shortlisted, rejected, hired
   const [status, setStatus] = useState(candidate?.status?.toLowerCase() || 'shortlisted');
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+    if (!token) {
+      toast.error("Authentication token missing. Please log in again.");
+      return;
+    }
+
     setLoading(true);
+    // Create a loading toast that we can update later
+    const toastId = toast.loading("Updating status...");
 
     try {
-      // Endpoint: PATCH /user/:id/status
       const response = await api.patch(
         `/user/${candidateId}/status`, 
         { 
-          status: status, // pending, shortlisted, rejected, or hired
+          status: status, 
           notes: note 
         },
         {
@@ -38,24 +43,25 @@ const UpdateStatus = () => {
         }
       );
 
-      if (response.data.success) {
-        alert("Status Updated Successfully!");
-        navigate(-1); 
+      if (response.data.success || response.status === 200) {
+        toast.success("Status Updated Successfully!", { id: toastId });
+        // Small delay before navigating to let the user see the success toast
+        setTimeout(() => navigate(-1), 1000); 
       }
     } catch (error) {
       console.error("Update Status Error:", error);
-      alert(error.response?.data?.message || "Failed to update status. Please try again.");
+      const errorMessage = error.response?.data?.message || "Failed to update status.";
+      toast.error(errorMessage, { id: toastId });
     } finally {
       setLoading(false);
     }
   };
 
-  if (!candidate) return <div className="p-6 text-center font-black text-slate-400 text-[10px] uppercase tracking-widest">Candidate Not Found</div>;
+  if (!candidate) return <div className="p-6 text-center font-black text-slate-400 text-[10px] uppercase tracking-widest">Candidate Context Missing</div>;
 
   return (
     <div className="min-h-screen bg-[#f8fafc] p-4 md:p-8 font-sans flex items-start justify-center">
       <div className="max-w-md w-full">
-        {/* Compact Back Button */}
         <button 
           onClick={() => navigate(-1)} 
           className="flex items-center gap-1.5 text-slate-400 hover:text-red-600 mb-4 font-black text-[9px] uppercase tracking-widest transition-colors"
@@ -64,7 +70,6 @@ const UpdateStatus = () => {
         </button>
 
         <div className="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200 overflow-hidden border border-slate-100">
-          {/* Slim Red Accent Bar */}
           <div className="h-2.5 bg-red-600"></div>
           
           <div className="p-6">
@@ -84,7 +89,6 @@ const UpdateStatus = () => {
 
             <form onSubmit={handleUpdate} className="space-y-5">
               <div className="space-y-5">
-                {/* Status Selection */}
                 <div>
                   <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">
                     Candidate Status
@@ -102,7 +106,6 @@ const UpdateStatus = () => {
                   </select>
                 </div>
 
-                {/* Notes Input */}
                 <div>
                   <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">
                     Internal Notes
@@ -111,14 +114,13 @@ const UpdateStatus = () => {
                     rows="3"
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
-                    placeholder="Add feedback..."
+                    placeholder="Add feedback regarding React skills, system design, etc..."
                     disabled={loading}
                     className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl font-bold text-slate-600 text-[11px] focus:outline-none focus:ring-2 focus:ring-red-500/10 transition-all placeholder:text-slate-300"
                   />
                 </div>
               </div>
 
-              {/* Action Buttons Row */}
               <div className="flex gap-2 pt-2">
                 <button 
                   type="submit"

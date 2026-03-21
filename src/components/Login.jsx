@@ -1,47 +1,47 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { Mail, Lock, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setLogin } from '../redux/authSlice';
+import { api } from '../Api/api'; 
+import toast, { Toaster } from 'react-hot-toast';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      const response = await axios.post('http://localhost:5000/user/login', {
-        email,
-        password,
-      });
+  try {
+    const response = await api.post('/user/login', { email, password });
+    const { user } = response.data; 
+    
+    dispatch(setLogin({ user, token: null })); 
+    
+    // Display only the backend success message
+    toast.success(response.data.message || `Welcome, ${user.name}`);
 
-      const { user, token } = response.data;
-      dispatch(setLogin({ user, token }));
-      navigate('/landing');
-      
-    } catch (err) {
-      setError(err.response?.data?.message || 'Invalid Credentials');
-    } finally {
-      setLoading(false);
-    }
-  };
+    setTimeout(() => { navigate('/landing'); }, 500);
+    
+  } catch (err) {
+    // Extract exact message from backend and fire only ONE toast
+    const backendMessage = err.response?.data?.message || 'Invalid Credentials';
+    toast.error(backendMessage);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans">
-      {/* Navbar / Logo Area */}
-    
+     
 
-      {/* Main Content */}
       <div className="flex-grow flex items-center justify-center px-4 -mt-20">
         <div className="w-full max-w-[440px] p-12 rounded-[2.5rem] border border-gray-50 shadow-[0_10px_50px_rgba(0,0,0,0.04)]">
           <div className="mb-10 text-center sm:text-left">
@@ -50,12 +50,6 @@ const Login = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="text-red-500 text-xs font-medium text-center bg-red-50 py-2 rounded-lg">
-                {error}
-              </div>
-            )}
-
             <div className="space-y-2">
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">
                 Email Address
@@ -93,7 +87,7 @@ const Login = () => {
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full bg-red-600 text-white font-bold py-4 rounded-xl text-xs uppercase tracking-widest hover:bg-red-700 transition-all active:scale-[0.99] flex items-center justify-center gap-2 mt-4"
+              className="w-full bg-red-600 text-white font-bold py-4 rounded-xl text-xs uppercase tracking-widest hover:bg-red-700 transition-all active:scale-[0.99] flex items-center justify-center gap-2 mt-4 disabled:bg-red-400"
             >
               {loading ? <Loader2 className="animate-spin" size={18} /> : 'Sign In'}
             </button>
@@ -107,10 +101,9 @@ const Login = () => {
         </div>
       </div>
 
-      {/* Dark Footer */}
       <footer className="bg-black py-8 text-center">
         <p className="text-gray-400 text-xs tracking-wide">
-          © 2022 Bynaric All Rights Reserved. <span className="text-gray-600 ml-1">[wps_visitor_counter]</span>
+          © 2026 Bynaric All Rights Reserved.
         </p>
       </footer>
     </div>

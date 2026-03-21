@@ -3,24 +3,27 @@ import { createSlice } from '@reduxjs/toolkit';
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
-    user: null,
-    token: null,
+    user: null, // Populated after login or /me check
     isAuthenticated: false,
+    isCheckingAuth: true, // Used to show a loading spinner on refresh
   },
   reducers: {
     setLogin: (state, action) => {
-      // Expecting action.payload to have { user, token }
+      // Backend returns { user } after successful cookie placement
       state.user = action.payload.user;
-      state.token = action.payload.token;
       state.isAuthenticated = true;
+      state.isCheckingAuth = false;
     },
     setLogout: (state) => {
       state.user = null;
-      state.token = null;
       state.isAuthenticated = false;
+      state.isCheckingAuth = false;
     },
+    setCheckingAuth: (state, action) => {
+      state.isCheckingAuth = action.payload;
+    }
   },
 });
 
-export const { setLogin, setLogout } = authSlice.actions;
+export const { setLogin, setLogout, setCheckingAuth } = authSlice.actions;
 export default authSlice.reducer;

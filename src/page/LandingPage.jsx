@@ -1,43 +1,31 @@
-import React, { useEffect } from 'react'; // Added useEffect
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux'; // Added useSelector
-import { Calendar, Users, Briefcase, ClipboardList, ArrowRight,FileUp } from 'lucide-react';
+import { useSelector } from 'react-redux'; 
+import { Calendar, Users, Briefcase, FileUp, ArrowRight } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const LandingPage = () => {
   const navigate = useNavigate();
 
-  // 1. Get the token from Redux state
-  const { token } = useSelector((state) => state.auth);
+  // 1. Check for 'user' and 'isAuthenticated' instead of 'token'
+  // Since tokens are in cookies, Redux only tracks the user profile
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
 
-  // 2. Functionality to log token data to console
   useEffect(() => {
-    if (token) {
-      try {
-        // This decodes the middle part of the JWT (the payload)
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(
-          window.atob(base64)
-            .split('')
-            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-            .join('')
-        );
-
-        const userData = JSON.parse(jsonPayload);
-        
-        console.log("--- Auth Token Data ---");
-        console.log("Full Token:", token);
-        console.log("Decoded User Info:", userData);
-        console.log("Name:", userData.name);
-        console.log("Email:", userData.email);
-
-      } catch (e) {
-        console.error("Error decoding token:", e);
-      }
-    } else {
-      console.warn("No token found in Redux state.");
+    // 2. Redirect if not logged in
+    if (!isAuthenticated && !user) {
+      console.warn("No active session found. Redirecting to login...");
+      toast.error("Please login to access the dashboard");
+      navigate('/login'); 
+      return;
     }
-  }, [token]);
+
+    if (user) {
+      console.log("--- Dashboard Loaded ---");
+      console.log("User:", user.name);
+      console.log("Email:", user.email);
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const actions = [
     {
@@ -54,14 +42,13 @@ const LandingPage = () => {
       icon: <Users size={24} />,
       bg: "bg-red-600",
     },
-   {
-  title: "Upload Resume",
-  path: "/upload_Resume",
-  description: "Bulk upload candidate resumes in ZIP format for processing.", 
-  icon: <FileUp size={24} />, 
-  bg: "bg-red-600",
-},
-   
+    {
+      title: "Upload Resume",
+      path: "/upload_Resume",
+      description: "Bulk upload candidate resumes in ZIP format for processing.", 
+      icon: <FileUp size={24} />, 
+      bg: "bg-red-600",
+    },
     {
       title: "Scheduled Interviews",
       path: "/list_schedule_interview", 
@@ -71,18 +58,19 @@ const LandingPage = () => {
     }
   ];
 
+  // 3. Prevent UI flicker during redirect
+  if (!isAuthenticated && !user) return null;
+
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans text-slate-900">
       <main className="max-w-6xl mx-auto px-6 py-12">
         {/* Header Section */}
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-black text-slate-800 uppercase tracking-tighter mb-2">
-            HR Dashboard
+          <h2 className="text-2xl font-bold text-slate-800 uppercase tracking-tighter mb-2">
+            Welcome, {user?.name || 'HR Manager'}
           </h2>
           <div className="h-1 w-12 bg-red-600 mx-auto rounded-full mb-4"></div>
-          <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">
-            Select a module to manage the recruitment lifecycle
-          </p>
+         
         </div>
 
         {/* Action Grid */}
@@ -118,7 +106,7 @@ const LandingPage = () => {
 
               {/* Footer Link */}
               <div className="mt-8 flex items-center text-slate-300 group-hover:text-red-600 transition-all duration-300">
-                <span className="text-[9px] font-black uppercase tracking-[0.2em]">Open Module</span>
+                <span className="text-[9px] font-black uppercase tracking-[0.2em]">Continue</span>
                 <ArrowRight size={12} className="ml-2 transition-transform duration-300 group-hover:translate-x-1" />
               </div>
             </div>
