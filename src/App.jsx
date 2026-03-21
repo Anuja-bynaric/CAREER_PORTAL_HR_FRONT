@@ -3,29 +3,38 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import AuthWrapper from './Wrapper/AuthWrapper'; // Import your new wrapper
 
+import CareerPortal from './components/CareerPortal/CareerPortal'
+
+import JobDetailView from './components/CareerPortal/JobDetailView'
+import CandidateDashboard from './components/CareerPortal/CandidateDashboard'
+//import Navbar from './components/CareerPortal/Navbar'
+import LoginForm from './components/CareerPortal/LoginForm';
+import Password from './components/CareerPortal/Password'
+import JobSelectionGate from './components/CareerPortal/JobSelection'
+
 // Components
-import Login from './components/Login';
-import Navbar from './components/Navbar';
+import Login from './components/HRPortal/Login';
+import Navbar from './components/HRPortal/Navbar';
 import LandingPage from './page/LandingPage';
-import AddDevelopers from './components/AddDevelopers';
-import JobOpening from './components/JobOpening';
-import DisplayCandidate from './components/DisplayCandidate';
-import ScheduleInterview from './components/ScheduleInterview';
-import JobOpeningList from './components/JobOeningList';
-import CandidateProfile from './components/CandidateProfile';
-import EditJob from './components/EditJob';
-import UpdateStatus from './components/UpdateStatus';
-import DisplayScheduleInterviews from './components/DisplayScheduleInterviews';
-import UploadResume from './components/UploadResume';
-import UpdateInterviewStatus from './components/UpdateInterviewStatus';
-import Footer from './components/Footer';
+import AddDevelopers from './components/HRPortal/AddDevelopers';
+import JobOpening from './components/HRPortal/JobOpening';
+import DisplayCandidate from './components/HRPortal/DisplayCandidate';
+import ScheduleInterview from './components/HRPortal/ScheduleInterview';
+import JobOpeningList from './components/HRPortal/JobOeningList';
+import CandidateProfile from './components/HRPortal/CandidateProfile';
+import EditJob from './components/HRPortal/EditJob';
+import UpdateStatus from './components/HRPortal/UpdateStatus';
+import DisplayScheduleInterviews from './components/HRPortal/DisplayScheduleInterviews';
+import UploadResume from './components/HRPortal/UploadResume';
+import UpdateInterviewStatus from './components/HRPortal/UpdateInterviewStatus';
+import Footer from './components/HRPortal/Footer';
 
 const App = () => {
   return (
     <Router>
-      <Toaster 
-        position="top-right" 
-        reverseOrder={false} 
+      <Toaster
+        position="top-right"
+        reverseOrder={false}
         toastOptions={{
           duration: 3000,
           style: {
@@ -50,12 +59,19 @@ const App = () => {
           },
         }}
       />
-      
+
       <Navbar />
 
       <Routes>
         {/* Public Route */}
         <Route path="/" element={<Login />} />
+
+        <Route path='/career' element={<CareerPortal />} />
+        <Route path="/selection/:jobId" element={<JobSelectionGate />} />
+        <Route path="/job/:jobId" element={<JobDetailView />} />
+        <Route path='/login' element={<LoginForm />} />
+        <Route path='/dashboard' element={<CandidateDashboard />} />
+        <Route path='/set-password' element={<Password />} />
 
         {/* Protected Routes - Only accessible by Admins/HR */}
         <Route element={<AuthWrapper allowedRoles={['admin', 'hr']} />}>
@@ -76,7 +92,7 @@ const App = () => {
         {/* Catch-all redirect to login if route doesn't exist */}
         <Route path="*" element={<Login />} />
       </Routes>
-      <Footer/>
+      <Footer />
     </Router>
   );
 };
