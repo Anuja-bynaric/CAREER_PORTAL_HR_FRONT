@@ -31,7 +31,7 @@ const JobSelectionGate = () => {
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col">
             {/* Header Section */}
-            <div className="bg-white border-b border-slate-200 py-10 px-8 lg:px-20">
+            <div className="bg-white border-b border-slate-200 pt-12 pb-8 px-8 lg:px-20">
                 <div className="max-w-7xl mx-auto">
                     <button
                         onClick={() => navigate('/career')}
@@ -81,16 +81,14 @@ const JobSelectionGate = () => {
                         Start a fresh application. It only takes a few minutes to get started.
                     </p>
                     <button
-                        onClick={() => navigate(`/job/${job.id}`, { state: { job, view: 'form' } })}
+                        onClick={() => navigate(`/job/${job.jobId}`, { state: { job, view: 'form' } })}
                         className="w-full py-2.5 bg-red-600 text-white font-medium rounded-lg shadow-sm hover:bg-red-700 transition-all text-xs uppercase tracking-wider"
                     >
                         APPLY NOW
                     </button>
                 </div>
             </div>
-            <footer className="w-full bg-black text-white/70 py-12 mt-20 text-center">
-                <p className="text-xs tracking-wider">© 2022 Bynaric All Rights Reserved. [wps_visitor_counter]</p>
-            </footer>
+
         </div>
     );
 };

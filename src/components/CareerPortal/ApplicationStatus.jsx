@@ -21,7 +21,7 @@ const ApplicationStatus = ({ applications }) => {
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-white border-b border-gray-100">
-                            <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Position</th>
+                            <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Applied For</th>
                             <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Date Applied</th>
                             <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Status</th>
                         </tr>
@@ -29,7 +29,7 @@ const ApplicationStatus = ({ applications }) => {
                     <tbody className="divide-y divide-gray-50">
                         {applications.map((app, index) => (
                             <tr key={index} className="hover:bg-gray-50/50 transition-colors">
-                                <td className="px-5 py-3.5 font-bold text-slate-800 text-[12px]">{app.jobTitle}</td>
+                                <td className="px-5 py-3.5 font-bold text-slate-800 text-[12px]">{app.jobTitle || app.position || `${app.jobId}`}</td>
 
                                 <td className="px-5 py-3.5 text-gray-500 text-[11px]">
                                     {(() => {

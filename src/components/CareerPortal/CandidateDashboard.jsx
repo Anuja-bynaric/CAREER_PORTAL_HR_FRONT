@@ -2,10 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { LogOut, Briefcase, CheckCircle, Clock } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { api } from '../../Api/api';
 import ApplicationStatus from './ApplicationStatus';
 import JobCard from './JobCard';
+import { useDispatch } from 'react-redux';
+import { clearApplicationSession } from '../../redux/ApplicationSlice';
 
 const CandidateDashboard = () => {
+
+    const dispatch = useDispatch();
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -15,21 +20,35 @@ const CandidateDashboard = () => {
     const [loading, setLoading] = useState(true);
 
     // 1. Redirect if no user session is found
+    // 1. Redirect if no user session is found
     useEffect(() => {
         if (!user) {
             navigate('/login');
         } else {
             fetchDashboardData();
         }
-    }, [user, navigate]);
-
+        // REMOVE 'user' from here. Use user.email if you want it to refresh on login/logout
+    }, [user?.email, navigate]);
     const fetchDashboardData = async () => {
         setLoading(true);
         try {
-            // Fetch all jobs so the user can see more opportunities
-            const response = await axios.get('http://localhost:5000/admin/all/jobs');
+            // 1. Fetch all jobs
+            const response = await api.get('/admin/all/jobs');
             if (response.data.success) {
                 setJobs(response.data.data);
+            }
+
+            // 2. Fetch applications for this user
+            // Ensure you use user.email from the existing state
+            const userRes = await api.get(`/user/my-applications?email=${user.email}`);
+
+            if (userRes.data.success) {
+                // FIX: Merge the applications into the existing user object
+                // This prevents name/email from disappearing and keeps JobCards visible
+                setUser(prevUser => ({
+                    ...prevUser,
+                    applications: userRes.data.data
+                }));
             }
         } catch (err) {
             console.error("Dashboard fetch error:", err);
@@ -38,14 +57,18 @@ const CandidateDashboard = () => {
         }
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        await api.post('/user/logout', {}, { withCredentials: true });
         // Clear local storage/session if you use it
         setUser(null);
+        dispatch(clearApplicationSession());
         navigate('/career');
+        console.log("Cookie cleared and state reset");
     };
 
     const handleApplyMore = (job) => {
-        navigate(`/job/${job.id}`, { state: { job, user, view: 'form' } });
+        // Uses jobId (string) instead of id (number)
+        navigate(`/job/${job.jobId}`, { state: { job, user, view: 'form' } });
     };
 
     if (!user) return null;
@@ -126,11 +149,11 @@ const CandidateDashboard = () => {
                         ) : (
                             jobs.map(job => (
                                 <JobCard
-                                    key={job.id}
+                                    key={job.jobId}
                                     {...job}
                                     onApply={() => handleApplyMore(job)}
                                     // Highlight if already applied
-                                    isApplied={user.appliedJobIds?.includes(job.id)}
+                                    isApplied={user.applications?.some(app => String(app.jobId) === String(job.jobId))}
                                 />
                             ))
                         )}
@@ -138,9 +161,6 @@ const CandidateDashboard = () => {
                 </section>
             </main>
 
-            <footer className="w-full bg-black text-white/70 py-12 mt-20 text-center">
-                <p className="text-xs tracking-wider">© 2022 Bynaric All Rights Reserved. [wps_visitor_counter]</p>
-            </footer>
         </div>
     );
 };

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Briefcase, Clock, ChevronLeft, Send, UploadCloud, FileText, X, Mail } from 'lucide-react';
 import axios from 'axios';
+import { api } from '../../Api/api';
 import { useNavigate, useLocation } from 'react-router-dom';
 import JobSelectionGate from './JobSelection.jsx';
 import LoginForm from './LoginForm.jsx';
 import Password from './Password.jsx';
+import toast from 'react-hot-toast';
 import { useParams } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { clearApplicationSession, setApplicationSession } from '../../redux/ApplicationSlice.js';
@@ -17,12 +19,7 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
   const navigate = useNavigate();
   const [job, setJob] = useState(state?.job || null);
 
-  const reduxToken = useSelector((state) =>
-    state.auth?.token ||           // 1. Check common Login slice
-    state.application?.appToken || // 2. Check your Application slice
-    state.auth?.user?.token ||     // 3. Check if it's nested in user
-    null                           // 4. Default to null
-  );
+  const reduxToken = useSelector((state) => state.application?.appToken);
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [currentView, setCurrentView] = useState(state?.view || 'selection');
@@ -36,13 +33,13 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
   useEffect(() => {
     // If user refreshes the page, 'state' is lost, so fetch from API
     if (!job) {
-      axios.get(`http://localhost:5000/admin/job/${jobId}`)
+      api.get(`/admin/job/${jobId}`)
         .then(res => setJob(res.data.data));
     }
   }, [jobId]);
 
   const handleBack = () => {
-    navigate('/career'); // Cleanly goes back to the list
+    navigate(`/selection/${jobId}`, { state: { job } }); // Cleanly goes back to the list
   };
 
   useEffect(() => {
@@ -94,26 +91,17 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
 
     // 1. Check for Resume
     if (!selectedFile && !user?.savedResumeName) {
-      alert("Please upload a resume.");
+      toast("Please upload a resume.");
       return;
     }
 
     setLoading(true);
-    let finalToken = reduxToken;
+    const finalToken = reduxToken;
 
-    if (!finalToken) {
-      try {
-        const persistRoot = JSON.parse(localStorage.getItem('persist:root') || '{}');
-        if (persistRoot.auth) {
-          const authData = JSON.parse(persistRoot.auth);
-          finalToken = authData.token;
-        }
-      } catch (err) {
-        console.error("Manual token retrieval failed:", err);
-      }
-    }
+    console.log("--- DEBUG: Authorization Header ---", finalToken ? `Bearer ${finalToken}` : "MISSING");
 
-    console.log("--- Header Check ---", finalToken ? "Token Found" : "No Token (Guest Mode)");
+
+
     try {
 
 
@@ -121,7 +109,8 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
       data.append('fullName', formData.fullName);
       data.append('emailAddress', formData.emailAddress);
       data.append('phoneNumber', formData.phoneNumber);
-      data.append('jobId', String(job.id || 1));
+      const actualJobId = job.jobId || job.id || job._id || jobId;
+      data.append('jobId', String(actualJobId));
       data.append('consentGiven', String(formData.consentGiven));
 
       if (selectedFile) {
@@ -134,16 +123,17 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
       // you must update your useSelector at the top of this file!
       // ... inside handleFormSubmit, after axios.post
       const response = await axios.post(`${API_BASE_URL}/user/applyJob`, data, {
+        withCredentials: true,
         headers: {
           'Content-Type': 'multipart/form-data',
-          'Authorization': finalToken ? `Bearer ${finalToken}` : ''
+          ...(finalToken && { 'Authorization': `Bearer ${finalToken}` })
         }
       });
 
       if (response.data.success) {
         // CASE A: User was already logged in
         if (user || finalToken) {
-          alert("Application submitted successfully!");
+          toast("Application submitted successfully!");
           navigate('/dashboard', { state: { user } });
         }
         // CASE B: New Candidate (Guest)
@@ -154,7 +144,7 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
           setIsPendingVerification(true);
 
           // Optional: If you want to move to password screen immediately after email check
-          // setCurrentView('set-password'); 
+          //setCurrentView('set-password'); 
         }
       }
 
@@ -162,7 +152,7 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
       // This is where you see "Email already exists" because Authorization was empty
       const msg = error.response?.data?.message || "Something went wrong";
       console.error("Backend Error Response:", error.response?.data);
-      alert(msg);
+      toast(msg);
     } finally {
       setLoading(false);
     }
@@ -215,7 +205,7 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
           // Import setApplicationSession at the top of this file if not already there
           if (newToken) {
             dispatch(setApplicationSession(newToken));
-            localStorage.setItem('token', newToken); // Backup
+
           }
 
           const userData = finalData?.user || {
@@ -401,9 +391,6 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
         </div>
       </div>
 
-      <footer className="w-full bg-black text-white/70 py-12 mt-20 text-center">
-        <p className="text-xs tracking-wider">© 2022 Bynaric All Rights Reserved. [wps_visitor_counter]</p>
-      </footer>
     </div>
   );
 };

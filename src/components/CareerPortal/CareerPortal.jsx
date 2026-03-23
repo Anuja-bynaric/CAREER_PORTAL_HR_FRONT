@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, MapPin, ChevronLeft, ChevronDown, ChevronRight } from 'lucide-react';
 import axios from 'axios';
+import { api } from '../../Api/api';
 import JobCard from './JobCard';
 import CompanyInfo from './CompanyInfo';
 import Footer from './Footer';
@@ -21,8 +22,9 @@ const CareerPortal = () => {
   const fetchAllJobs = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/admin/all/jobs');
+      const response = await api.get('/admin/all/jobs');
       if (response.data.success) {
+        console.log("ACTUAL API DATA:", response.data.data[0]);
         setFilteredJobs(response.data.data);
       }
     } catch (err) {
@@ -44,7 +46,7 @@ const CareerPortal = () => {
   const handleSearch = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/admin/search', {
+      const response = await api.get('/admin/search', {
         params: { keyword: searchKeyword, location: searchLocation }
       });
       if (response.data.success) {
@@ -64,7 +66,7 @@ const CareerPortal = () => {
   const handleSelectJob = (job) => {
     // Navigate to the selection route with the ID. 
     // Make sure 'job.id' matches the property name from your API (e.g., job._id or job.id)
-    const id = job.id || job._id || job.Jobid;
+    const id = job.jobId || job._id || job.Jobid;
     navigate(`/selection/${id}`, { state: { job } });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -137,7 +139,7 @@ const CareerPortal = () => {
               <div className="grid gap-6">
                 {filteredJobs.map(job => (
                   <JobCard
-                    key={job.id || job._id}
+                    key={job.jobId || job._id}
                     location={job.location?.toUpperCase()}
                     title={job.title}
                     exp={job.experience}

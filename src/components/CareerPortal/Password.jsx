@@ -3,6 +3,7 @@ import { Lock, Eye, EyeOff, CheckCircle2, Mail, KeyRound, LayoutDashboard } from
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setApplicationSession } from '../../redux/ApplicationSlice';
+import { api } from '../../Api/api';
 import axios from 'axios';
 
 const Password = ({ token: propToken, onPasswordSuccess }) => {
@@ -38,7 +39,7 @@ const Password = ({ token: propToken, onPasswordSuccess }) => {
         setLoading(true);
 
         try {
-            const response = await axios.post('http://localhost:5000/user/finalize-application', {
+            const response = await api.post('/user/finalize-application', {
                 token: token,
                 password: password
             });

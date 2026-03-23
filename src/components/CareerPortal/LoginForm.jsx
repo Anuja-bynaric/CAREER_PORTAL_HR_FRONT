@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
 import { ChevronLeft, Lock, Mail, Loader2 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { api } from '../../Api/api';
+import { useDispatch } from 'react-redux';
 import axios from 'axios';
+import toast from 'react-hot-toast';
+import { setApplicationSession } from '../../redux/ApplicationSlice';
 
 const LoginForm = ({ onLoginSuccess }) => {
     const navigate = useNavigate();
     const location = useLocation();
+    const dispatch = useDispatch();
     const [loading, setLoading] = useState(false);
 
     const [formData, setFormData] = useState({
@@ -21,25 +26,45 @@ const LoginForm = ({ onLoginSuccess }) => {
         setLoading(true);
 
         try {
-            const response = await axios.post('http://localhost:5000/user/login', {
+            const response = await api.post('/user/login', {
                 email: formData.email,
                 password: formData.password
+            }, {
+                withCredentials: true
             });
 
             if (response.data.success) {
+                // 1. Log the entire object to see where the token is hiding
+                console.log("--- FULL BACKEND RESPONSE ---", response.data);
+
+                // 2. Try to find the token using every possible path
+                const token = response.data.token ||
+                    response.data.data?.token ||
+                    response.data.body?.token;
+
+                const user = response.data.user ||
+                    response.data.data?.user ||
+                    response.data.body?.user;
+
+                console.log("Extracted Token:", token);
+
+                if (token) {
+                    dispatch(setApplicationSession(token));
+                    localStorage.setItem('appToken', token);
+                }
                 if (onLoginSuccess) onLoginSuccess(response.data.user);
 
                 // FIXED: Redirect to /dashboard instead of /career
                 // We pass the user data so the Dashboard knows who just logged in
                 navigate('/dashboard', {
                     state: {
-                        user: response.data.user,
+                        user,
                         previouslySelectedJob: job // Optional: keep track of the job they wanted
                     }
                 });
             }
         } catch (error) {
-            alert(error.response?.data?.message || "Invalid Email or Password. Please try again.");
+            toast(error.response?.data?.message || "Invalid Email or Password. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -50,7 +75,7 @@ const LoginForm = ({ onLoginSuccess }) => {
         <div className="min-h-screen flex flex-col bg-slate-50">
 
             {/* 2. This div grows to fill space, keeping the footer at the bottom */}
-            <div className="flex-grow flex items-center justify-center px-6 py-12">
+            <div className="flex-grow flex items-start justify-center px-6 py-12">
                 <div className="w-full max-w-sm bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
                     <button
                         onClick={() => navigate(-1)}
@@ -110,10 +135,6 @@ const LoginForm = ({ onLoginSuccess }) => {
                 </div>
             </div>
 
-            {/* 3. Footer now sits outside the centering div */}
-            <footer className="w-full bg-black text-white/70 py-10 text-center">
-                <p className="text-xs tracking-wider">© 2022 Bynaric All Rights Reserved. [wps_visitor_counter]</p>
-            </footer>
         </div>
     );
 }
