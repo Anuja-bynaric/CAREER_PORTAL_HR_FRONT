@@ -26,17 +26,39 @@ const JobOpeningList = () => {
       });
       
       if (response.data.success) {
-        const formattedJobs = response.data.data.map(job => ({
-          ...job, 
-          applicants: job.applicantCount || 0, 
-          status: job.status || "Active", 
-          postedDate: new Date(job.createdAt).toLocaleDateString('en-CA'),
-          requirements: job.requirements || [],
-          responsibilities: job.responsibilities || [],
-          jobId: job.jobId
-        }));
-        setJobs(formattedJobs);
-        setFilteredJobs(formattedJobs);
+        const jobsData = response.data.data;
+
+        // Fetch applicant counts for each job using your backend API
+        const jobsWithCorrectCounts = await Promise.all(
+          jobsData.map(async (job) => {
+            try {
+              // Using your provided endpoint: /job/:jobId/candidates
+              const countResponse = await api.get(`/admin/job/${job.jobId}/candidates`, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+              
+              return {
+                ...job,
+                applicants: countResponse.data.count || 0, // Using the 'count' field from your backend response
+                status: job.status || "Active", 
+                postedDate: new Date(job.createdAt).toLocaleDateString('en-CA'),
+                jobId: job.jobId
+              };
+            } catch (error) {
+              // If 404 is returned (No candidates found), set count to 0
+              return {
+                ...job,
+                applicants: 0,
+                status: job.status || "Active",
+                postedDate: new Date(job.createdAt).toLocaleDateString('en-CA'),
+                jobId: job.jobId
+              };
+            }
+          })
+        );
+
+        setJobs(jobsWithCorrectCounts);
+        setFilteredJobs(jobsWithCorrectCounts);
       }
     } catch (error) {
       console.error("Error fetching jobs:", error);
@@ -55,7 +77,7 @@ const JobOpeningList = () => {
       job.jobId.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredJobs(results);
-    setCurrentPage(1); // Reset to first page on search
+    setCurrentPage(1); 
   }, [searchTerm, jobs]);
 
   // Logic for Pagination
@@ -87,7 +109,6 @@ const JobOpeningList = () => {
               <h2 className="text-xl font-bold text-slate-800 tracking-tight uppercase leading-none">
                 job opening List
               </h2>
-             
             </div>
           </div>
 
@@ -152,8 +173,8 @@ const JobOpeningList = () => {
                         </span>
                       </td>
                       <td className="px-6 py-5">
-                        <span className={`text-[11px] font-medium flex items-center gap-2 ${job.status === 'Active' ? 'text-green-600' : 'text-slate-400'}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${job.status === 'Active' ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`}></span>
+                        <span className={`text-[11px] font-medium flex items-center gap-2 ${job.status === 'open' ? 'text-green-600' : 'text-slate-400'}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${job.status === 'open' ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`}></span>
                           {job.status}
                         </span>
                       </td>
@@ -161,15 +182,23 @@ const JobOpeningList = () => {
                         <div className="flex justify-center gap-2">
                           <button
                             onClick={() => navigate(`/editJob/${job.jobId}`, { state: { job } })}
-                            className="px-3 py-1.5 text-[11px] font-medium text-slate-600 bg-white border border-slate-200 rounded-md hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm"
+                            className="px-3 py-1.5 text-[11px] font-medium text-slate-600 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-all shadow-sm"
                           >
                             Edit
                           </button>
+                          
+                          <button
+                            onClick={() => navigate(`/job_status_update/${job.jobId}`, { state: { job } })}
+                            className="px-3 py-1.5 text-[11px] font-medium text-red-600 bg-red-50 border border-red-100 rounded-md hover:bg-red-100 transition-all shadow-sm"
+                          >
+                            Status
+                          </button>
+
                           <button
                             onClick={() => onViewCandidates(job.jobId)}
                             className="px-3 py-1.5 text-[11px] font-medium text-white bg-slate-800 rounded-md hover:bg-slate-900 transition-all shadow-sm"
                           >
-                            View Candidates
+                            Candidates
                           </button>
                         </div>
                       </td>
@@ -222,7 +251,6 @@ const JobOpeningList = () => {
             )}
           </div>
 
-          {/* Footer Note */}
           <div className="mt-8 text-center">
             <p className="text-[10px] font-medium text-slate-400 uppercase tracking-[0.2em]">Bynaric Career Portal v2.0</p>
           </div>

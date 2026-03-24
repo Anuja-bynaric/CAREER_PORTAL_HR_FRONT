@@ -83,7 +83,7 @@ const Reschedule = () => {
   return (
     <div className="max-w-md mx-auto p-6">
       <button 
-        onClick={() => navigate(-1)} 
+        onClick={() => navigate(`/Interview/${Interview_id}`)} 
         className="flex items-center gap-1 text-slate-400 hover:text-red-600 mb-6 font-black text-[7px] uppercase tracking-widest transition-colors"
       >
         <ArrowLeft size={10}/> Cancel & Back

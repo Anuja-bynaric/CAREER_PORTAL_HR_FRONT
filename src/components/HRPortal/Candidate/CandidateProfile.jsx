@@ -6,37 +6,30 @@ import toast from 'react-hot-toast';
 
 const CandidateProfile = () => {
   const navigate = useNavigate();
-  const { state } = useLocation();
-  const { candidateId } = useParams(); 
+  const { jobId, candidateId } = useParams(); // Extracting both from URL
   
   const [candidate, setCandidate] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const activeJobId = state?.activeJobId;
-
   useEffect(() => {
     fetchCandidateData();
-  }, [candidateId]);
+  }, [jobId, candidateId]);
 
   const fetchCandidateData = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/user/candidate/${candidateId}`); 
+      // Calling backend with both jobId and candidateId (user_id)
+      const response = await api.get(`/user/candidates/${jobId}/${candidateId}`); 
       const data = response.data.data;
 
-      const specificApp = data.applications?.find(app => String(app.jobId) === String(activeJobId));
-      
-      const displayStatus = specificApp ? specificApp.status : (data.applications?.[0]?.status || "Pending");
-      const displayJobId = specificApp ? specificApp.jobId : (data.applications?.[0]?.jobId || "N/A");
-
       setCandidate({
-        id: data.id,
-        name: data.name,
-        email: data.email, // This is the email we are passing forward
+        id: data.user_id || data.id,
+        name: data.fullName || "N/A",
+        email: data.email || "Not Provided",
         phone: data.phoneNumber || "Not Provided",
-        status: displayStatus,
-        jobId: displayJobId,
-        applications: data.applications || [],
+        status: data.status || "Pending",
+        jobId: data.jobId,
+        appliedAt: data.applied_at,
         atsScore: data.atsScore || 0,
         summary: data.summary || "No summary provided.",
         skills: data.skills || [],
@@ -98,7 +91,7 @@ const CandidateProfile = () => {
                 {candidate.name}
               </h1>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-red-600 font-black text-[8px] uppercase tracking-widest">ID: {candidate.id}</span>
+                <span className="text-red-600 font-black text-[8px] uppercase tracking-widest">User ID: {candidate.id}</span>
                 <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase border ${getStatusStyles(candidate.status)}`}>
                   {candidate.status}
                 </span>
@@ -117,7 +110,6 @@ const CandidateProfile = () => {
                 <RefreshCcw size={12}/> Update
               </button>
               
-              {/* UPDATED NAVIGATION: Passing the candidate object containing the email */}
               {(candidate.status?.toLowerCase().trim() === 'shortlisted') && (
                 <button 
                   onClick={() => navigate(`/ScheduleInterview/${candidate.id}`, { 
@@ -125,7 +117,7 @@ const CandidateProfile = () => {
                       candidate: {
                         id: candidate.id,
                         name: candidate.name,
-                        email: candidate.email // Email explicitly passed here
+                        email: candidate.email 
                       } 
                     } 
                   })} 
@@ -154,41 +146,20 @@ const CandidateProfile = () => {
               <section>
                 <div className="flex items-center gap-2 mb-3">
                   <Briefcase size={12} className="text-red-600" />
-                  <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Active Applications</h3>
+                  <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Application Info</h3>
                 </div>
                 <div className="space-y-2">
-                  {candidate.applications?.length > 0 ? (
-                    candidate.applications.map((app) => (
-                      <div key={app.id} className="p-3 bg-white border border-slate-100 rounded-xl flex justify-between items-center shadow-sm">
-                        <div>
-                          <p className="text-[9px] font-black text-slate-900 uppercase">Job Ref: {app.jobId}</p>
-                          <p className="text-[7px] text-slate-400 font-bold uppercase tracking-widest">
-                            Applied: {app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : 'N/A'}
-                          </p>
-                        </div>
-                        <span className={`px-2 py-0.5 rounded-full text-[6px] font-black uppercase border ${getStatusStyles(app.status)}`}>
-                          {app.status}
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-[10px] text-slate-400 italic">No applications linked to this email.</p>
-                  )}
-                </div>
-              </section>
-
-              <section>
-                <div className="flex items-center gap-2 mb-3">
-                  <Star size={12} className="text-red-600" />
-                  <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Skills</h3>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {candidate.skills?.length > 0 ? candidate.skills.map((skill, index) => (
-                    <span key={index} className="px-2.5 py-1 bg-white border border-slate-200 text-slate-700 text-[8px] font-bold uppercase tracking-wide rounded-lg flex items-center gap-1.5">
-                      <CheckCircle size={8} className="text-green-500" />
-                      {skill}
+                  <div className="p-3 bg-white border border-slate-100 rounded-xl flex justify-between items-center shadow-sm">
+                    <div>
+                      <p className="text-[9px] font-black text-slate-900 uppercase">Job Ref: {candidate.jobId}</p>
+                      <p className="text-[7px] text-slate-400 font-bold uppercase tracking-widest">
+                        Applied: {candidate.appliedAt ? new Date(candidate.appliedAt).toLocaleDateString() : 'N/A'}
+                      </p>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-full text-[6px] font-black uppercase border ${getStatusStyles(candidate.status)}`}>
+                      {candidate.status}
                     </span>
-                  )) : <p className="text-[10px] text-slate-400 italic">No specific skills listed.</p>}
+                  </div>
                 </div>
               </section>
             </div>
@@ -206,13 +177,6 @@ const CandidateProfile = () => {
                     <span className="text-[10px] font-bold text-slate-700">{candidate.phone}</span>
                   </div>
                 </div>
-              </div>
-
-              <div className="bg-red-600 p-4 rounded-2xl text-white shadow-lg shadow-red-100">
-                <p className="text-[8px] font-bold uppercase tracking-widest opacity-70 mb-1">Primary Job ID</p>
-                <h3 className="text-sm font-bold uppercase">{candidate.jobId}</h3>
-                <div className="h-0.5 w-6 bg-white/30 my-2 rounded-full"></div>
-                <p className="text-[7px] font-bold uppercase tracking-widest opacity-80">Bynaric Systems</p>
               </div>
             </div>
           </div>

@@ -1,43 +1,35 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Navigate, Outlet } from 'react-router-dom';
-import { setLogin, setCheckingAuth } from '../redux/authSlice';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { setLogin, setCheckingAuth, setLogout } from '../redux/authSlice';
 import { api } from '../Api/api';
 import { Loader2 } from 'lucide-react';
 
 const AuthWrapper = ({ allowedRoles = ['admin'] }) => {
   const dispatch = useDispatch();
+  const location = useLocation();
   const { user, isAuthenticated, isCheckingAuth } = useSelector((state) => state.auth);
 
-useEffect(() => {
-  const verifyUser = async () => {
-    // 1. If we already have a user in Redux, stop loading immediately
-    if (isAuthenticated && user) {
-      dispatch(setCheckingAuth(false));
-      return;
-    }
-
-    try {
-      const response = await api.get('/user/me');
-      if (response.data.success) {
-        // 2. IMPORTANT: Ensure your backend /user/me returns the token 
-        // if your frontend logic depends on user.token
-        dispatch(setLogin({ user: response.data.user }));
-      } else {
-        dispatch(setLogout()); // Clear state if response is unsuccessful
+  useEffect(() => {
+    const verifyUser = async () => {
+      // Only verify if we don't have a user OR if we just logged in
+      try {
+        const response = await api.get('/user/me');
+        if (response.data.success) {
+          dispatch(setLogin({ user: response.data.user }));
+        } else {
+          dispatch(setLogout());
+        }
+      } catch (error) {
+        dispatch(setLogout());
+      } finally {
+        dispatch(setCheckingAuth(false));
       }
-    } catch (error) {
-      console.error("Verification failed:", error);
-      dispatch(setLogout()); // Force logout on 401/500 errors
-    } finally {
-      dispatch(setCheckingAuth(false));
-    }
-  };
+    };
 
-  verifyUser();
-}, [dispatch, isAuthenticated, user]);
+    verifyUser();
+  }, [dispatch]); // Only run on mount
 
-  // 1. Show a loading spinner while checking the cookie/token
   if (isCheckingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -46,13 +38,13 @@ useEffect(() => {
     );
   }
 
-  // 2. If not authenticated after the check, redirect to login
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    // Redirect to login but save the location they were trying to go to
+    return <Navigate to="/" state={{ from: location }} replace />;
   }
 
-  // 3. Role-based access control
-  const hasAccess = allowedRoles.includes(user?.role?.toLowerCase());
+  const userRole = user?.role?.toLowerCase() || "";
+  const hasAccess = allowedRoles.map(r => r.toLowerCase()).includes(userRole);
 
   if (!hasAccess) {
     return (
@@ -61,13 +53,10 @@ useEffect(() => {
           <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <span className="text-2xl font-bold">!</span>
           </div>
-          <h1 className="text-xl font-bold text-gray-900 uppercase mb-2">Access Denied</h1>
-          <p className="text-gray-400 text-sm mb-6">You do not have administrative privileges.</p>
-          <button 
-            onClick={() => window.history.back()}
-            className="text-xs font-bold uppercase tracking-widest text-red-600 hover:underline"
-          >
-            Go Back
+          <h1 className="text-xl font-bold text-gray-900 mb-2">ACCESS DENIED</h1>
+          <p className="text-gray-400 text-sm mb-6">Role "{user?.role}" does not have permission.</p>
+          <button onClick={() => window.location.href='/'} className="text-red-600 font-bold uppercase text-xs">
+            Return to Login
           </button>
         </div>
       </div>

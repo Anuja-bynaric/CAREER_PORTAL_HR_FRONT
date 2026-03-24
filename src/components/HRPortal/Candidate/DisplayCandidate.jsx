@@ -121,9 +121,21 @@ const DisplayCandidate = () => {
                   <tr key={candidate.id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer">
                     <td
                       className="px-6 py-4"
-                      onClick={() => navigate(`/candidate_Profile/${candidate.id}`, { 
-                        state: { candidate, activeJobId: jobId } // Pass jobId context
-                      })}
+                     onClick={() => {
+    // According to your DB screenshot, the key is user_id
+    const userId = candidate.userId; 
+
+    // if (!userId) {
+    //   console.error("User ID is missing in candidate object:", candidate);
+    //   alert("Error: Candidate User ID not found. Check console.");
+    //   return;
+    // }
+
+    // Navigate to the dynamic profile path
+    navigate(`/candidate_Profile/${jobId}/${userId}`, { 
+      state: { candidate } 
+    });
+  }}
                     >
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-red-50 group-hover:text-red-600 transition-all shadow-sm">
@@ -151,7 +163,7 @@ const DisplayCandidate = () => {
                           <Eye size={16} />
                         </a>
                         <a
-                          href={`http://localhost:5000/admin/resume/${candidate.resumeUrl.split('/').pop()}`}
+                          href={`http://localhost:5000/admin/resume/${candidate.resumeUrl?.split('/').pop()}`}
                           target="_blank"
                           rel="noreferrer"
                           download

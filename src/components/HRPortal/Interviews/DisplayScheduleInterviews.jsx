@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, ArrowLeft, Clock, User, Loader2, RefreshCw } from 'lucide-react';
+import { Calendar, ArrowLeft, Clock, User, Loader2, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { api } from '../../../Api/api';
 import toast from 'react-hot-toast';
 
@@ -9,6 +9,10 @@ const DisplayScheduleInterviews = () => {
   const [interviews, setInterviews] = useState([]);
   const [selectedDate, setSelectedDate] = useState('');
   const [loading, setLoading] = useState(true);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   useEffect(() => {
     const fetchInterviews = async () => {
@@ -35,6 +39,18 @@ const DisplayScheduleInterviews = () => {
       .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
   }, [interviews, selectedDate]);
 
+  // Pagination Logic
+  const totalPages = Math.ceil(filteredInterviews.length / itemsPerPage);
+  const currentData = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredInterviews.slice(start, start + itemsPerPage);
+  }, [filteredInterviews, currentPage]);
+
+  // Reset pagination when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedDate]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white">
@@ -47,7 +63,6 @@ const DisplayScheduleInterviews = () => {
   return (
     <div className="min-h-screen bg-[#f8fafc] p-4 font-sans">
       <div className="max-w-5xl mx-auto">
-        
         <div className="bg-white rounded-[1.5rem] border border-gray-100 shadow-sm overflow-hidden">
           {/* Compact Header */}
           <div className="p-5 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -83,8 +98,8 @@ const DisplayScheduleInterviews = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filteredInterviews.length > 0 ? (
-                  filteredInterviews.map((interview) => (
+                {currentData.length > 0 ? (
+                  currentData.map((interview) => (
                     <tr key={interview.id} className="hover:bg-gray-50/30 transition-all">
                       <td className="px-6 py-4">
                         <div 
@@ -95,8 +110,9 @@ const DisplayScheduleInterviews = () => {
                             <User size={12} />
                           </div>
                           <div>
-                            <p className="text-[11px] font-black text-gray-900 group-hover:text-red-600 transition-colors uppercase">
-                              App: #{interview.jobApplicationId}
+                            {/* Priority: Display name from backend if available, otherwise show ID */}
+                            <p className="text-[10px] font-black text-gray-900 group-hover:text-red-600 transition-colors uppercase truncate max-w-[150px]">
+                              {interview.jobApplicantName || interview.jobApplication?.fullName || `ID: #${interview.jobApplicationId}`}
                             </p>
                             <p className="text-[9px] font-bold text-gray-400 tracking-tighter">
                               INT-ID: {interview.interviewerId}
@@ -150,17 +166,42 @@ const DisplayScheduleInterviews = () => {
                 ) : (
                   <tr>
                     <td colSpan="5" className="px-6 py-10 text-center text-[10px] font-bold text-slate-300 uppercase tracking-widest">
-                      No interviews scheduled for this date
+                      No interviews scheduled
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="p-4 border-t border-gray-50 flex items-center justify-between">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                Page {currentPage} of {totalPages}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="p-1.5 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                >
+                  <ChevronLeft size={14} className="text-gray-600" />
+                </button>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="p-1.5 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                >
+                  <ChevronRight size={14} className="text-gray-600" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
         
         <p className="text-center mt-6 text-[7px] font-black text-slate-300 uppercase tracking-[0.3em]">
-          naric interview management system
+          Bynaric interview management system
         </p>
       </div>
     </div>

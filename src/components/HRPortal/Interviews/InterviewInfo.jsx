@@ -50,7 +50,7 @@ const InterviewInfo = () => {
     <div className="max-w-md mx-auto p-4">
       {/* Back Button */}
       <button 
-        onClick={() => navigate(-1)} 
+        onClick={() => navigate('/list_schedule_interview')} 
         className="flex items-center gap-2 text-slate-400 hover:text-red-600 mb-4 transition-all group"
       >
         <ArrowLeft size={10}/>
@@ -58,7 +58,7 @@ const InterviewInfo = () => {
       </button>
 
       <div className="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200 border border-slate-100 overflow-hidden">
-        {/* Header Section - Reduced Padding */}
+        {/* Header Section */}
         <div className="bg-slate-900 p-6 text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 w-24 h-24 bg-red-600/10 rounded-full -mr-12 -mt-12 blur-2xl"></div>
           
@@ -76,7 +76,6 @@ const InterviewInfo = () => {
               </div>
             </div>
 
-            {/* Icons - Smaller and more compact */}
             <div className="flex gap-2">
               <button 
                 onClick={() => navigate(`/Interview/edit/${interview.id}`)}
@@ -85,17 +84,20 @@ const InterviewInfo = () => {
                 <Edit3 size={14} className="text-white" />
               </button>
               
-              <button 
-                onClick={() => navigate(`/Reschedule/${interview.id}`)}
-                className="p-2 bg-white/5 hover:bg-red-600 rounded-xl transition-all border border-white/10 shadow-lg"
-              >
-                <CalendarClock size={14} className="text-white" />
-              </button>
+              {/* FIXED: Reschedule icon only shows if status is 'scheduled' */}
+              {interview.status === 'scheduled' && (
+                <button 
+                  onClick={() => navigate(`/Reschedule/${interview.id}`)}
+                  className="p-2 bg-white/5 hover:bg-red-600 rounded-xl transition-all border border-white/10 shadow-lg"
+                >
+                  <CalendarClock size={14} className="text-white" />
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Content Section - Reduced Spacing */}
+        {/* Content Section */}
         <div className="p-6 space-y-5">
           
           {/* Schedule Grid */}
@@ -121,7 +123,7 @@ const InterviewInfo = () => {
             </div>
           </div>
 
-          {/* Meeting Link - Compacted */}
+          {/* Meeting Link */}
           <div className="p-4 bg-white rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-red-50 rounded-lg text-red-600">
@@ -147,7 +149,7 @@ const InterviewInfo = () => {
             )}
           </div>
 
-          {/* Notes - Compacted */}
+          {/* Notes */}
           <div className="space-y-2">
             <div className="flex items-center gap-1.5">
               <FileText size={10} className="text-slate-400"/>

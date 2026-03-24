@@ -36,8 +36,8 @@ const LandingPage = () => {
       bg: "bg-red-600",
     },
     {
-      title: "Add Interviewer",
-      path: "/addInterviwer",
+      title: "Display Interviewer",
+      path: "/InterviewerList",
       description: "Manage your team and assign interviewer roles.",
       icon: <Users size={24} />,
       bg: "bg-red-600",
