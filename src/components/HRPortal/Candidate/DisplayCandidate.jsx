@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { api } from '../../../Api/api';
-import { User, Download, ArrowLeft, Search, Loader2, AlertCircle, Eye } from 'lucide-react';
+import { User, Download, ArrowLeft, Search, Loader2, AlertCircle, Eye, X } from 'lucide-react';
 
 const DisplayCandidate = () => {
   const navigate = useNavigate();
@@ -14,6 +14,9 @@ const DisplayCandidate = () => {
   const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Modal State
+  const [selectedFile, setSelectedFile] = useState(null);
 
   useEffect(() => {
     const fetchCandidates = async () => {
@@ -121,21 +124,12 @@ const DisplayCandidate = () => {
                   <tr key={candidate.id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer">
                     <td
                       className="px-6 py-4"
-                     onClick={() => {
-    // According to your DB screenshot, the key is user_id
-    const userId = candidate.userId; 
-
-    // if (!userId) {
-    //   console.error("User ID is missing in candidate object:", candidate);
-    //   alert("Error: Candidate User ID not found. Check console.");
-    //   return;
-    // }
-
-    // Navigate to the dynamic profile path
-    navigate(`/candidate_Profile/${jobId}/${userId}`, { 
-      state: { candidate } 
-    });
-  }}
+                      onClick={() => {
+                        const userId = candidate.userId;
+                        navigate(`/candidate_Profile/${jobId}/${userId}`, {
+                          state: { candidate }
+                        });
+                      }}
                     >
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-red-50 group-hover:text-red-600 transition-all shadow-sm">
@@ -154,14 +148,13 @@ const DisplayCandidate = () => {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex justify-center gap-2">
-                        <a
-                          href={`http://localhost:5000${candidate.resumeUrl}`}
-                          target="_blank"
-                          rel="noreferrer"
+                        {/* Eye Button now sets the state instead of navigating */}
+                        <button
+                          onClick={() => setSelectedFile(`http://localhost:5000/uploads/resumes/${candidate.resumeUrl?.split('/').pop()}`)}
                           className="p-2.5 inline-block bg-white border border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
                         >
                           <Eye size={16} />
-                        </a>
+                        </button>
                         <a
                           href={`http://localhost:5000/admin/resume/${candidate.resumeUrl?.split('/').pop()}`}
                           target="_blank"
@@ -182,6 +175,32 @@ const DisplayCandidate = () => {
           </table>
         </div>
       </div>
+
+      {/* MODAL OVERLAY */}
+      {selectedFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-5xl h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
+              <h3 className="font-bold text-slate-800">Resume Preview</h3>
+              <button 
+                onClick={() => setSelectedFile(null)}
+                className="p-2 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            {/* Modal Content - PDF Viewer */}
+            <div className="flex-grow bg-slate-100">
+              <iframe
+                src={selectedFile}
+                className="w-full h-full border-none"
+                title="Resume Preview"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
