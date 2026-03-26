@@ -33,6 +33,8 @@ const LoginForm = ({ onLoginSuccess }) => {
                 withCredentials: true
             });
 
+            console.log("Token check from backend:", response.data.token);
+
             if (response.data.success) {
                 // 1. Log the entire object to see where the token is hiding
                 console.log("--- FULL BACKEND RESPONSE ---", response.data);

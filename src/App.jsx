@@ -7,14 +7,14 @@ import CareerPortal from './components/CareerPortal/CareerPortal'
 
 import JobDetailView from './components/CareerPortal/JobDetailView'
 import CandidateDashboard from './components/CareerPortal/CandidateDashboard'
-//import Navbar from './components/CareerPortal/Navbar'
+import Navbar from './components/CareerPortal/Navbar'
 import LoginForm from './components/CareerPortal/LoginForm';
 import Password from './components/CareerPortal/Password'
 import JobSelectionGate from './components/CareerPortal/JobSelection'
 
 // Components
 import Login from './components/HRPortal/Login';
-import Navbar from './components/HRPortal/Navbar';
+//import Navbar from './components/HRPortal/Navbar';
 import LandingPage from './page/LandingPage';
 import AddDevelopers from './components/HRPortal/AddDevelopers';
 import JobOpening from './components/HRPortal/JobOpening';
@@ -72,6 +72,9 @@ const App = () => {
         <Route path='/login' element={<LoginForm />} />
         <Route path='/dashboard' element={<CandidateDashboard />} />
         <Route path='/set-password' element={<Password />} />
+
+
+
 
         {/* Protected Routes - Only accessible by Admins/HR */}
         <Route element={<AuthWrapper allowedRoles={['admin', 'hr']} />}>

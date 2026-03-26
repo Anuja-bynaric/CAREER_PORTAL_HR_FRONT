@@ -15,6 +15,7 @@ const CareerPortal = () => {
   const [loading, setLoading] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [searchLocation, setSearchLocation] = useState("");
+  const [allJobs, setAllJobs] = useState([]);
   const [filteredJobs, setFilteredJobs] = useState([]);
 
   const navigate = useNavigate();
@@ -24,8 +25,10 @@ const CareerPortal = () => {
     try {
       const response = await api.get('/admin/all/jobs');
       if (response.data.success) {
+        const jobs = response.data.data;
         console.log("ACTUAL API DATA:", response.data.data[0]);
-        setFilteredJobs(response.data.data);
+        setAllJobs(jobs);
+        setFilteredJobs(jobs);
       }
     } catch (err) {
       console.error("Error fetching jobs:", err);
@@ -43,24 +46,32 @@ const CareerPortal = () => {
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
 
-  const handleSearch = async () => {
+  const handleSearch = () => {
     setLoading(true);
-    try {
-      const response = await api.get('/admin/search', {
-        params: { keyword: searchKeyword, location: searchLocation }
-      });
-      if (response.data.success) {
-        setFilteredJobs(response.data.data);
-        // Cleaned up: Removed setSelectedJob(null)
-        setTimeout(() => {
-          document.getElementById('jobs-list')?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-      }
-    } catch (err) {
-      console.error("Search error:", err);
-    } finally {
-      setLoading(false);
-    }
+
+    const keyword = searchKeyword.toLowerCase().trim();
+    const location = searchLocation.toLowerCase().trim();
+
+    const results = allJobs.filter((job) => {
+      // If no keyword is entered, match everything. 
+      // Otherwise, check if keyword is in the title or category.
+      const matchesKeyword = !keyword ||
+        (job.title && job.title.toLowerCase().includes(keyword)) ||
+        (job.category && job.category.toLowerCase().includes(keyword));
+
+      const matchesLocation = !location ||
+        location === "all locations" ||
+        (job.location && job.location.toLowerCase().includes(location));
+
+      return matchesKeyword && matchesLocation;
+    });
+
+    setFilteredJobs(results);
+    setLoading(false);
+
+    setTimeout(() => {
+      document.getElementById('jobs-list')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   const handleSelectJob = (job) => {

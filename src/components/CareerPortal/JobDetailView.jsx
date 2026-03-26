@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Briefcase, Clock, ChevronLeft, Send, UploadCloud, FileText, X, Mail } from 'lucide-react';
+import { MapPin, Briefcase, Clock, ChevronLeft, Send, UploadCloud, FileText, X, Mail, Tag, Plus } from 'lucide-react';
 import axios from 'axios';
 import { api } from '../../Api/api';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -18,7 +18,8 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
   const { state } = useLocation();
   const navigate = useNavigate();
   const [job, setJob] = useState(state?.job || null);
-
+  const [skills, setSkills] = useState([]); // State for the skills tags
+  const [skillInput, setSkillInput] = useState('');
   const reduxToken = useSelector((state) => state.application?.appToken);
 
   const [selectedFile, setSelectedFile] = useState(null);
@@ -60,17 +61,47 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
     consentGiven: false
   });
 
+
+
   // ADDED: Auto-fill logic when user data is available
   useEffect(() => {
     if (user) {
+
+      console.log("Autofill debugging - User Object:", user);
       setFormData({
         fullName: user.name || '',
         emailAddress: user.email || '',
-        phoneNumber: user.phone || '',
-        consentGiven: true // Auto-check consent for logged-in users
+        phoneNumber: user.phoneNumber || user.phone || '',
+        consentGiven: true
       });
+      if (user.skills) {
+        if (Array.isArray(user.skills)) {
+          setSkills(user.skills);
+        } else if (typeof user.skills === 'string') {
+          try {
+            const parsed = JSON.parse(user.skills);
+            setSkills(Array.isArray(parsed) ? parsed : []);
+          } catch (e) {
+            setSkills(user.skills.split(',').map(s => s.trim()));
+          }
+        }
+      } if (user.resumeUrl || user.savedResumeName) {
+      }
     }
   }, [user]);
+
+  const addSkill = (e) => {
+    e.preventDefault();
+    const val = skillInput.trim();
+    if (val && !skills.includes(val)) {
+      setSkills([...skills, val]);
+      setSkillInput('');
+    }
+  };
+
+  const removeSkill = (skillToRemove) => {
+    setSkills(skills.filter(s => s !== skillToRemove));
+  };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -98,11 +129,8 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
     setLoading(true);
     const finalToken = reduxToken;
 
-    console.log("--- DEBUG: Authorization Header ---", finalToken ? `Bearer ${finalToken}` : "MISSING");
-
-
-
-    try {
+    //console.log("--- DEBUG: Authorization Header ---", finalToken ? `Bearer ${finalToken}` : "MISSING");
+   try {
 
 
       const data = new FormData();
@@ -113,9 +141,13 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
       data.append('jobId', String(actualJobId));
       data.append('consentGiven', String(formData.consentGiven));
 
+      data.append('skills', JSON.stringify(skills));
+
       if (selectedFile) {
-        data.append('resume', selectedFile);
-      }
+      data.append('resume', selectedFile);
+    } else if (user?.savedResumeName) {
+      data.append('savedResumeName', user.savedResumeName);
+    }
 
       // 2. SEND THE REQUEST
       // NOTE: If reduxToken is null, we send an empty string. 
@@ -331,9 +363,44 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
                 />
               </div>
 
+              <div className="space-y-2">
+                <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-tight">
+                  Skills / Key Expertise
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={skillInput}
+                    onChange={(e) => setSkillInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && addSkill(e)}
+                    placeholder="e.g. React, Node.js"
+                    className="flex-grow p-2.5 text-xs border border-gray-200 outline-none rounded-xl focus:ring-2 focus:ring-red-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={addSkill}
+                    className="bg-slate-100 p-2.5 rounded-xl hover:bg-slate-200 text-slate-600"
+                  >
+                    <Plus size={18} />
+                  </button>
+                </div>
+
+                {/* Skill Tags Display */}
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {skills.map((skill, index) => (
+                    <span key={index} className="flex items-center gap-1 bg-red-50 text-red-600 px-3 py-1 rounded-full text-[10px] font-bold border border-red-100">
+                      {skill}
+                      <button type="button" onClick={() => removeSkill(skill)}>
+                        <X size={12} className="hover:text-red-800" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
               <div className="max-w-full">
                 <label className="block text-[11px] font-bold text-gray-600 mb-1 uppercase tracking-tight">Resume/CV *</label>
-                {user?.savedResumeName && !selectedFile ? (
+                {(user?.savedResumeName || user?.resumeUrl) && !selectedFile ? (
                   <div className="flex items-center justify-between p-2 bg-blue-50 border border-blue-100 rounded-xl">
                     <div className="flex items-center gap-2 overflow-hidden">
                       <FileText className="text-blue-600 flex-shrink-0" size={14} />
