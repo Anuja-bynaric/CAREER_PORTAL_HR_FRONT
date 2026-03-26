@@ -15,7 +15,6 @@ const DisplayCandidate = () => {
   const [statusFilter, setStatusFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Modal State
   const [selectedFile, setSelectedFile] = useState(null);
 
   useEffect(() => {
@@ -43,23 +42,35 @@ const DisplayCandidate = () => {
     fetchCandidates();
   }, [jobId, token]);
 
-  const finalFilteredData = candidates.filter(c => {
-    const name = c.fullName || '';
-    const email = c.email || '';
-    const phone = c.phoneNumber || '';
-    const status = c.status || 'Applied';
-    const matchesStatus = statusFilter === 'All' || status === statusFilter;
-    const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      phone.includes(searchTerm);
-    return matchesStatus && matchesSearch;
-  });
+const finalFilteredData = candidates.filter(c => {
+  // 1. Setup variables for comparison
+  const name = c.fullName || '';
+  const email = c.email || '';
+  const phone = c.phoneNumber || '';
+  
+  // 2. Standardize status comparison (Case-insensitive + trimming)
+  const status = (c.status || 'Pending').toLowerCase().trim();
+  const activeFilter = statusFilter.toLowerCase().trim();
 
+  // 3. Define the matches
+  const matchesStatus = activeFilter === 'all' || status === activeFilter;
+  
+  const matchesSearch = 
+    name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    phone.includes(searchTerm);
+
+  // 4. Return the combined result
+  return matchesStatus && matchesSearch;
+});
+
+  // Updated to support the specific statuses provided
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Selected': return 'bg-green-50 text-green-600 border-green-100';
+      case 'Hired': return 'bg-green-100 text-green-700 border-green-200';
       case 'Shortlisted': return 'bg-blue-50 text-blue-600 border-blue-100';
       case 'Rejected': return 'bg-red-50 text-red-600 border-red-100';
+      case 'Pending': 
       default: return 'bg-amber-50 text-amber-600 border-amber-100';
     }
   };
@@ -94,12 +105,13 @@ const DisplayCandidate = () => {
             />
           </div>
 
+          {/* UPDATED FILTER SECTION */}
           <div className="flex bg-white p-1 rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
-            {['All', 'Applied', 'Shortlisted', 'Selected', 'Rejected'].map((status) => (
+            {['All', 'Pending', 'Shortlisted', 'Rejected', 'Hired'].map((status) => (
               <button
                 key={status}
                 onClick={() => setStatusFilter(status)}
-                className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${statusFilter === status ? 'bg-red-600 text-white' : 'text-slate-500'}`}
+                className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${statusFilter === status ? 'bg-red-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}
               >
                 {status}
               </button>
@@ -125,8 +137,8 @@ const DisplayCandidate = () => {
                     <td
                       className="px-6 py-4"
                       onClick={() => {
-                        const userId = candidate.userId;
-                        navigate(`/candidate_Profile/${jobId}/${userId}`, {
+                        const candidateId = candidate.id;
+                        navigate(`/candidate_Profile/${jobId}/${candidateId}`, {
                           state: { candidate }
                         });
                       }}
@@ -142,13 +154,12 @@ const DisplayCandidate = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border ${getStatusColor(candidate.status)}`}>
-                        {candidate.status || 'Applied'}
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border ${getStatusColor(candidate.status || 'Pending')}`}>
+                        {candidate.status || 'Pending'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex justify-center gap-2">
-                        {/* Eye Button now sets the state instead of navigating */}
                         <button
                           onClick={() => setSelectedFile(`http://localhost:5000/uploads/resumes/${candidate.resumeUrl?.split('/').pop()}`)}
                           className="p-2.5 inline-block bg-white border border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
@@ -169,7 +180,7 @@ const DisplayCandidate = () => {
                   </tr>
                 ))
               ) : (
-                <tr><td colSpan="3" className="py-20 text-center text-slate-400 text-xs font-bold uppercase tracking-widest">No candidates found</td></tr>
+                <tr><td colSpan="3" className="py-20 text-center text-slate-400 text-xs font-bold uppercase tracking-widest">No {statusFilter !== 'All' ? statusFilter.toLowerCase() : ''} candidates found</td></tr>
               )}
             </tbody>
           </table>
@@ -180,7 +191,6 @@ const DisplayCandidate = () => {
       {selectedFile && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white w-full max-w-5xl h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-            {/* Modal Header */}
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
               <h3 className="font-bold text-slate-800">Resume Preview</h3>
               <button 
@@ -190,7 +200,6 @@ const DisplayCandidate = () => {
                 <X size={20} />
               </button>
             </div>
-            {/* Modal Content - PDF Viewer */}
             <div className="flex-grow bg-slate-100">
               <iframe
                 src={selectedFile}

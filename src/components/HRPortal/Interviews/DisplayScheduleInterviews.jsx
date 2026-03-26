@@ -41,6 +41,7 @@ const DisplayScheduleInterviews = () => {
 
   // Pagination Logic
   const totalPages = Math.ceil(filteredInterviews.length / itemsPerPage);
+  
   const currentData = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredInterviews.slice(start, start + itemsPerPage);
@@ -64,14 +65,15 @@ const DisplayScheduleInterviews = () => {
     <div className="min-h-screen bg-[#f8fafc] p-4 font-sans">
       <div className="max-w-5xl mx-auto">
         <div className="bg-white rounded-[1.5rem] border border-gray-100 shadow-sm overflow-hidden">
+          
           {/* Compact Header */}
           <div className="p-5 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate('/landing')}
-                className="p-2 bg-white border border-gray-200 rounded-lg hover:border-red-500 transition-all shadow-sm"
+                className="p-2 bg-white border border-gray-200 rounded-lg hover:border-red-500 transition-all shadow-sm group"
               >
-                <ArrowLeft size={14} className="text-gray-400 hover:text-red-600" />
+                <ArrowLeft size={14} className="text-gray-400 group-hover:text-red-600" />
               </button>
               <h2 className="text-lg font-black text-gray-900 tracking-tight uppercase">
                 Schedule <span className="text-red-600">Interviews</span>
@@ -82,7 +84,7 @@ const DisplayScheduleInterviews = () => {
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-gray-50 border border-gray-100 rounded-lg px-3 py-1.5 text-[10px] font-black text-gray-600 outline-none cursor-pointer"
+              className="bg-gray-50 border border-gray-100 rounded-lg px-3 py-1.5 text-[10px] font-black text-gray-600 outline-none cursor-pointer hover:border-red-200 focus:border-red-500 transition-all"
             />
           </div>
 
@@ -110,7 +112,6 @@ const DisplayScheduleInterviews = () => {
                             <User size={12} />
                           </div>
                           <div>
-                            {/* Priority: Display name from backend if available, otherwise show ID */}
                             <p className="text-[10px] font-black text-gray-900 group-hover:text-red-600 transition-colors uppercase truncate max-w-[150px]">
                               {interview.jobApplicantName || interview.jobApplication?.fullName || `ID: #${interview.jobApplicationId}`}
                             </p>
@@ -174,26 +175,52 @@ const DisplayScheduleInterviews = () => {
             </table>
           </div>
 
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="p-4 border-t border-gray-50 flex items-center justify-between">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                Page {currentPage} of {totalPages}
-              </span>
-              <div className="flex gap-2">
+          {/* Enhanced Pagination Controls */}
+          {!loading && totalPages > 1 && (
+            <div className="p-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
+              <div className="hidden sm:block">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                  Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredInterviews.length)} of {filteredInterviews.length} Results
+                </p>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                {/* Previous Button */}
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="p-1.5 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  className="p-2 bg-white border border-gray-200 rounded-lg text-gray-400 hover:text-red-600 disabled:opacity-30 disabled:hover:text-gray-400 transition-all shadow-sm"
                 >
-                  <ChevronLeft size={14} className="text-gray-600" />
+                  <ChevronLeft size={14} />
                 </button>
+
+                {/* Direct Page Numbers */}
+                <div className="flex gap-1">
+                  {[...Array(totalPages)].map((_, i) => {
+                    const pageNum = i + 1;
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-8 h-8 rounded-lg text-[9px] font-black transition-all shadow-sm ${
+                          currentPage === pageNum 
+                          ? 'bg-red-600 text-white border border-red-600' 
+                          : 'bg-white border border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-600'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Next Button */}
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className="p-1.5 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  className="p-2 bg-white border border-gray-200 rounded-lg text-gray-400 hover:text-red-600 disabled:opacity-30 disabled:hover:text-gray-400 transition-all shadow-sm"
                 >
-                  <ChevronRight size={14} className="text-gray-600" />
+                  <ChevronRight size={14} />
                 </button>
               </div>
             </div>

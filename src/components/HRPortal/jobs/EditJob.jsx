@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Trash2, Plus, X } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, Plus, X, Code2, ListChecks } from 'lucide-react';
 import { useSelector } from 'react-redux'; 
 import { api } from '../../../Api/api';
 import toast from 'react-hot-toast';
@@ -13,6 +13,7 @@ const EditJob = () => {
   
   const jobToEdit = location.state?.job || { title: "", status: "Active" };
 
+  // Update 1: Initialize 'skills' as a string by joining the requirements array
   const [formData, setFormData] = useState({
     title: jobToEdit.title || "",
     status: jobToEdit.status || "Active",
@@ -22,30 +23,36 @@ const EditJob = () => {
     category: jobToEdit.category || "",
     description: jobToEdit.description || "",
     about: jobToEdit.about || "",
-    requirements: jobToEdit.requirements || [""],
-    responsibilities: jobToEdit.responsibilities || [""],
+    skills: Array.isArray(jobToEdit.requirements) ? jobToEdit.requirements.join(', ') : "",
+    responsibilities: Array.isArray(jobToEdit.responsibilities) ? jobToEdit.responsibilities.join(', ') : "",
   });
 
-  const handleArrayChange = (index, value, field) => {
-    const newArray = [...formData[field]];
-    newArray[index] = value;
-    setFormData({ ...formData, [field]: newArray });
-  };
-
-  const addArrayField = (field) => {
-    setFormData({ ...formData, [field]: [...formData[field], ""] });
-  };
-
-  const removeArrayField = (index, field) => {
-    const newArray = formData[field].filter((_, i) => i !== index);
-    setFormData({ ...formData, [field]: newArray });
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
     const loadingToast = toast.loading("Updating job...");
+    
     try {
-      const response = await api.put(`/admin/update/jobs/${id || jobToEdit.id || jobToEdit.jobId}`, formData, {
+      // Update 2: Map the string fields back to arrays for the backend
+      const submissionData = {
+        ...formData,
+        requirements: formData.skills
+          .split(',')
+          .map(item => item.trim())
+          .filter(i => i !== ""),
+        responsibilities: formData.responsibilities
+          .split(',')
+          .map(item => item.trim())
+          .filter(i => i !== "")
+      };
+
+      // Remove the UI-only 'skills' key before sending
+      delete submissionData.skills;
+
+      const response = await api.put(`/admin/update/jobs/${id || jobToEdit.id || jobToEdit.jobId}`, submissionData, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -79,13 +86,12 @@ const EditJob = () => {
   };
 
   const inputStyle = "w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-red-500/5 focus:border-[#ff0000] text-[11px] font-bold text-slate-700 transition-all";
-  const labelStyle = "text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1";
+  const labelStyle = "text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1 flex items-center gap-2";
 
   return (
     <div className="min-h-screen bg-[#f8fafc] p-4 md:p-8 font-sans">
       <div className="max-w-2xl mx-auto">
         
-        {/* Modern Back Button Header */}
         <div className="flex items-center gap-4 mb-8">
           <button 
             onClick={() => navigate('/job_Openings')} 
@@ -96,125 +102,93 @@ const EditJob = () => {
             </div>
           </button>
           <div>
-            <h2 className="text-1xl font-black text-slate-800 tracking-tight uppercase leading-none">
-              Edit Job Opening
-            </h2>
-            <p className="text-slate-500 text-[11px] font-medium mt-1">
-              Edit details for {id || jobToEdit.jobId || jobToEdit.id}
-            </p>
+            <h2 className="text-1xl font-black text-slate-800 tracking-tight uppercase leading-none">Edit Job Opening</h2>
+            <p className="text-slate-500 text-[11px] font-medium mt-1">Edit details for {id || jobToEdit.jobId || jobToEdit.id}</p>
           </div>
         </div>
 
         <div className="bg-white rounded-[1.5rem] shadow-lg shadow-slate-200/50 border border-gray-100 overflow-hidden mb-10">
           <div className="h-2.5 bg-[#ff0000]"></div>
           
-          <div className="p-2 pt-2">
+          <div className="p-6">
             <div className="flex justify-between items-start mb-6 border-b border-slate-50 pb-4">
-              <div>
-                <p className="text-1xl pt-4 font-black text-slate-800 tracking-tight uppercase leading-none">
-              {formData.title}
-            </p>
-              </div>
-              <button 
-                type="button"
-                onClick={handleDelete}
-                className="flex items-center gap-1.5 pt-2 px-3 py-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all text-[10px] font-black uppercase"
-              >
+              <p className="text-1xl font-black text-slate-800 tracking-tight uppercase">{formData.title}</p>
+              <button onClick={handleDelete} className="flex items-center gap-1.5 text-slate-400 hover:text-red-600 transition-all text-[10px] font-black uppercase">
                 <Trash2 size={14} /> Delete Job
               </button>
             </div>
 
             <form onSubmit={handleUpdate} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className=" md:col-span-2">
+                <div className="md:col-span-2">
                   <label className={labelStyle}>Job Designation</label>
-                  <input type="text" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className={inputStyle} />
+                  <input type="text" name="title" value={formData.title} onChange={handleChange} className={inputStyle} />
                 </div>
-                <div className="space-y-1.5">
+                <div>
                   <label className={labelStyle}>Location</label>
-                  <input type="text" value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} className={inputStyle} placeholder="e.g. Pune, India" />
+                  <input type="text" name="location" value={formData.location} onChange={handleChange} className={inputStyle} />
                 </div>
-                <div className="space-y-1.5">
+                <div>
                   <label className={labelStyle}>Experience</label>
-                  <input type="text" value={formData.experience} onChange={(e) => setFormData({...formData, experience: e.target.value})} className={inputStyle} placeholder="e.g. 2-4 Years" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className={labelStyle}>Job Type</label>
-                  <select value={formData.jobType} onChange={(e) => setFormData({...formData, jobType: e.target.value})} className={inputStyle}>
-                    <option value="Full-time">Full-time</option>
-                    <option value="Part-time">Part-time</option>
-                    <option value="Contract">Contract</option>
-                    <option value="Internship">Internship</option>
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className={labelStyle}>Category</label>
-                  <input type="text" value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className={inputStyle} placeholder="e.g. Engineering" />
+                  <input type="text" name="experience" value={formData.experience} onChange={handleChange} className={inputStyle} />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
+                <div>
                   <label className={labelStyle}>Posting Status</label>
-                  <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className={inputStyle}>
+                  <select name="status" value={formData.status} onChange={handleChange} className={inputStyle}>
                     <option value="Active">Active</option>
                     <option value="Closed">Closed</option>
                     <option value="On Hold">On Hold</option>
                   </select>
                 </div>
-                <div className="space-y-1.5">
-                  <label className={labelStyle}>Posted Date</label>
-                  <input type="text" disabled value={jobToEdit.postedDate} className="w-full px-4 py-2.5 bg-gray-100 border border-gray-100 rounded-xl text-[11px] font-bold text-gray-400 cursor-not-allowed" />
+                <div>
+                  <label className={labelStyle}>Job Type</label>
+                  <select name="jobType" value={formData.jobType} onChange={handleChange} className={inputStyle}>
+                    <option value="Full-time">Full-time</option>
+                    <option value="Internship">Internship</option>
+                    <option value="Contract">Contract</option>
+                  </select>
                 </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div>
                 <label className={labelStyle}>Description</label>
-                <textarea rows="3" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className={`${inputStyle} resize-none`} />
+                <textarea name="description" rows="3" value={formData.description} onChange={handleChange} className={`${inputStyle} resize-none`} />
               </div>
 
-              <div className="space-y-1.5">
-                <label className={labelStyle}>About the Company</label>
-                <textarea rows="3" value={formData.about} onChange={(e) => setFormData({...formData, about: e.target.value})} className={`${inputStyle} resize-none`} />
-              </div>
-
-              {/* Requirements Section */}
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <label className={labelStyle}>Requirements</label>
-                  <button type="button" onClick={() => addArrayField('requirements')} className="text-red-600 font-black text-[8px] uppercase flex items-center gap-1 hover:underline">
-                    <Plus size={10} /> Add Requirement
-                  </button>
+              {/* Update 3: Changed to Textareas for comma-separated input */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelStyle}><Code2 size={12} className="text-red-500" /> Technical Skills</label>
+                  <textarea 
+                    name="skills" 
+                    rows="4" 
+                    value={formData.skills} 
+                    onChange={handleChange} 
+                    placeholder="React, Node.js, TypeScript..." 
+                    className={`${inputStyle} resize-none`} 
+                  />
                 </div>
-                {formData.requirements.map((req, idx) => (
-                  <div key={idx} className="flex gap-2 group/field">
-                    <input type="text" value={req} onChange={(e) => handleArrayChange(idx, e.target.value, 'requirements')} className={inputStyle} />
-                    <button type="button" onClick={() => removeArrayField(idx, 'requirements')} className="text-slate-300 hover:text-red-500 transition-colors"><X size={14} /></button>
-                  </div>
-                ))}
-              </div>
-
-              {/* Responsibilities Section */}
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <label className={labelStyle}>Responsibilities</label>
-                  <button type="button" onClick={() => addArrayField('responsibilities')} className="text-red-600 font-black text-[8px] uppercase flex items-center gap-1 hover:underline">
-                    <Plus size={10} /> Add Responsibility
-                  </button>
+                <div>
+                  <label className={labelStyle}><ListChecks size={12} className="text-red-500" /> Responsibilities</label>
+                  <textarea 
+                    name="responsibilities" 
+                    rows="4" 
+                    value={formData.responsibilities} 
+                    onChange={handleChange} 
+                    placeholder="UI Development, API integration..." 
+                    className={`${inputStyle} resize-none`} 
+                  />
                 </div>
-                {formData.responsibilities.map((res, idx) => (
-                  <div key={idx} className="flex gap-2 group/field">
-                    <input type="text" value={res} onChange={(e) => handleArrayChange(idx, e.target.value, 'responsibilities')} className={inputStyle} />
-                    <button type="button" onClick={() => removeArrayField(idx, 'responsibilities')} className="text-slate-300 hover:text-red-500 transition-colors"><X size={14} /></button>
-                  </div>
-                ))}
               </div>
 
               <div className="pt-6 flex gap-3 border-t border-slate-50">
-                <button type="submit" className="flex-1 bg-[#ff0000] hover:bg-red-700 text-white py-3 rounded-xl font-black text-[9px] uppercase tracking-[0.1em] transition-all shadow-md shadow-red-100 active:scale-95 flex items-center justify-center gap-1.5">
+                <button type="submit" className="flex-1 bg-[#ff0000] hover:bg-red-700 text-white py-3 rounded-xl font-black text-[9px] uppercase tracking-[0.1em] transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5">
                   <Save size={14} /> Save Changes
                 </button>
-                <button type="button" onClick={() => navigate('/job_Opening')} className="px-6 py-3 border border-slate-100 text-slate-400 rounded-xl font-black text-[9px] uppercase tracking-[0.1em] hover:bg-slate-50 transition-all">
+                <button type="button" onClick={() => navigate('/job_Openings')} className="px-6 py-3 border border-slate-100 text-slate-400 rounded-xl font-black text-[9px] uppercase hover:bg-slate-50 transition-all">
                   Cancel
                 </button>
               </div>

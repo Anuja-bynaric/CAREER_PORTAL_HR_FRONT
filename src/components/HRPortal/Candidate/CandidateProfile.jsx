@@ -1,25 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { User, Mail, Phone, Calendar, ArrowLeft, RefreshCcw, FileText, Star, Target, CheckCircle, Loader2, Briefcase } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
+// useSelector removed as it is no longer needed for the token
+import { User, Mail, Phone, Calendar, ArrowLeft, RefreshCcw, Briefcase, Loader2, Code2 } from 'lucide-react';
 import { api } from '../../../Api/api';
 import toast from 'react-hot-toast';
 
 const CandidateProfile = () => {
   const navigate = useNavigate();
-  const { jobId, candidateId } = useParams(); // Extracting both from URL
-  
+  const { jobId, candidateId } = useParams();
+
   const [candidate, setCandidate] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Fetches immediately without checking for a token
     fetchCandidateData();
   }, [jobId, candidateId]);
 
   const fetchCandidateData = async () => {
     try {
       setLoading(true);
-      // Calling backend with both jobId and candidateId (user_id)
+      
+      // Removed headers object since you are not using a token
       const response = await api.get(`/user/candidates/${jobId}/${candidateId}`); 
+      
       const data = response.data.data;
 
       setCandidate({
@@ -30,9 +34,7 @@ const CandidateProfile = () => {
         status: data.status || "Pending",
         jobId: data.jobId,
         appliedAt: data.applied_at,
-        atsScore: data.atsScore || 0,
-        summary: data.summary || "No summary provided.",
-        skills: data.skills || [],
+        skills: data.skills || [], 
         profileImage: data.profileImage || null,
       });
     } catch (error) {
@@ -95,10 +97,6 @@ const CandidateProfile = () => {
                 <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase border ${getStatusStyles(candidate.status)}`}>
                   {candidate.status}
                 </span>
-                <div className="flex items-center gap-1 px-2 py-0.5 bg-slate-900 text-white rounded-full">
-                   <Target size={10} className="text-red-500" />
-                   <span className="text-[7px] font-black uppercase tracking-wider">{candidate.atsScore}% ATS</span>
-                </div>
               </div>
             </div>
 
@@ -131,15 +129,25 @@ const CandidateProfile = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
+              {/* SKILLS SECTION */}
               <section>
                 <div className="flex items-center gap-2 mb-3">
-                  <FileText size={12} className="text-red-600" />
-                  <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Summary</h3>
+                  <Code2 size={12} className="text-red-600" />
+                  <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Technical Skills</h3>
                 </div>
-                <div className="bg-slate-50 border border-slate-100 p-4 rounded-2xl">
-                  <p className="text-[11px] font-medium text-slate-600 leading-relaxed">
-                    "{candidate.summary}"
-                  </p>
+                <div className="flex flex-wrap gap-2">
+                  {candidate.skills && candidate.skills.length > 0 ? (
+                    candidate.skills.map((skill, index) => (
+                      <span 
+                        key={index}
+                        className="px-3 py-1 bg-slate-100 border border-slate-200 text-slate-600 font-bold text-[9px] uppercase tracking-wider rounded-lg"
+                      >
+                        {skill}
+                      </span>
+                    ))
+                  ) : (
+                    <p className="text-[10px] font-medium text-slate-400 italic">No skills specified.</p>
+                  )}
                 </div>
               </section>
 

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Briefcase, Clock, ChevronLeft, Send, UploadCloud, FileText, X, Mail } from 'lucide-react';
+import { MapPin, Briefcase, Clock, ChevronLeft, Send, UploadCloud, FileText, X, Mail, Tag, Plus } from 'lucide-react';
 import axios from 'axios';
+import { api } from '../../Api/api';
 import { useNavigate, useLocation } from 'react-router-dom';
 import JobSelectionGate from './JobSelection.jsx';
 import LoginForm from './LoginForm.jsx';
 import Password from './Password.jsx';
+import toast from 'react-hot-toast';
 import { useParams } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { clearApplicationSession, setApplicationSession } from '../../redux/ApplicationSlice.js';
@@ -16,13 +18,9 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
   const { state } = useLocation();
   const navigate = useNavigate();
   const [job, setJob] = useState(state?.job || null);
-
-  const reduxToken = useSelector((state) =>
-    state.auth?.token ||           // 1. Check common Login slice
-    state.application?.appToken || // 2. Check your Application slice
-    state.auth?.user?.token ||     // 3. Check if it's nested in user
-    null                           // 4. Default to null
-  );
+  const [skills, setSkills] = useState([]); // State for the skills tags
+  const [skillInput, setSkillInput] = useState('');
+  const reduxToken = useSelector((state) => state.application?.appToken);
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [currentView, setCurrentView] = useState(state?.view || 'selection');
@@ -36,13 +34,13 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
   useEffect(() => {
     // If user refreshes the page, 'state' is lost, so fetch from API
     if (!job) {
-      axios.get(`http://localhost:5000/admin/job/${jobId}`)
+      api.get(`/admin/job/${jobId}`)
         .then(res => setJob(res.data.data));
     }
   }, [jobId]);
 
   const handleBack = () => {
-    navigate('/career'); // Cleanly goes back to the list
+    navigate(`/selection/${jobId}`, { state: { job } }); // Cleanly goes back to the list
   };
 
   useEffect(() => {
@@ -63,17 +61,47 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
     consentGiven: false
   });
 
+
+
   // ADDED: Auto-fill logic when user data is available
   useEffect(() => {
     if (user) {
+
+      console.log("Autofill debugging - User Object:", user);
       setFormData({
         fullName: user.name || '',
         emailAddress: user.email || '',
-        phoneNumber: user.phone || '',
-        consentGiven: true // Auto-check consent for logged-in users
+        phoneNumber: user.phoneNumber || user.phone || '',
+        consentGiven: true
       });
+      if (user.skills) {
+        if (Array.isArray(user.skills)) {
+          setSkills(user.skills);
+        } else if (typeof user.skills === 'string') {
+          try {
+            const parsed = JSON.parse(user.skills);
+            setSkills(Array.isArray(parsed) ? parsed : []);
+          } catch (e) {
+            setSkills(user.skills.split(',').map(s => s.trim()));
+          }
+        }
+      } if (user.resumeUrl || user.savedResumeName) {
+      }
     }
   }, [user]);
+
+  const addSkill = (e) => {
+    e.preventDefault();
+    const val = skillInput.trim();
+    if (val && !skills.includes(val)) {
+      setSkills([...skills, val]);
+      setSkillInput('');
+    }
+  };
+
+  const removeSkill = (skillToRemove) => {
+    setSkills(skills.filter(s => s !== skillToRemove));
+  };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -94,26 +122,14 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
 
     // 1. Check for Resume
     if (!selectedFile && !user?.savedResumeName) {
-      alert("Please upload a resume.");
+      toast("Please upload a resume.");
       return;
     }
 
     setLoading(true);
-    let finalToken = reduxToken;
+    const finalToken = reduxToken;
 
-    if (!finalToken) {
-      try {
-        const persistRoot = JSON.parse(localStorage.getItem('persist:root') || '{}');
-        if (persistRoot.auth) {
-          const authData = JSON.parse(persistRoot.auth);
-          finalToken = authData.token;
-        }
-      } catch (err) {
-        console.error("Manual token retrieval failed:", err);
-      }
-    }
-
-    console.log("--- Header Check ---", finalToken ? "Token Found" : "No Token (Guest Mode)");
+    //console.log("--- DEBUG: Authorization Header ---", finalToken ? `Bearer ${finalToken}` : "MISSING");
     try {
 
 
@@ -121,11 +137,16 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
       data.append('fullName', formData.fullName);
       data.append('emailAddress', formData.emailAddress);
       data.append('phoneNumber', formData.phoneNumber);
-      data.append('jobId', String(job.id || 1));
+      const actualJobId = job.jobId || job.id || job._id || jobId;
+      data.append('jobId', String(actualJobId));
       data.append('consentGiven', String(formData.consentGiven));
+
+      data.append('skills', JSON.stringify(skills));
 
       if (selectedFile) {
         data.append('resume', selectedFile);
+      } else if (user?.savedResumeName) {
+        data.append('savedResumeName', user.savedResumeName);
       }
 
       // 2. SEND THE REQUEST
@@ -134,16 +155,17 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
       // you must update your useSelector at the top of this file!
       // ... inside handleFormSubmit, after axios.post
       const response = await axios.post(`${API_BASE_URL}/user/applyJob`, data, {
+        withCredentials: true,
         headers: {
           'Content-Type': 'multipart/form-data',
-          'Authorization': finalToken ? `Bearer ${finalToken}` : ''
+          ...(finalToken && { 'Authorization': `Bearer ${finalToken}` })
         }
       });
 
       if (response.data.success) {
         // CASE A: User was already logged in
         if (user || finalToken) {
-          alert("Application submitted successfully!");
+          toast("Application submitted successfully!");
           navigate('/dashboard', { state: { user } });
         }
         // CASE B: New Candidate (Guest)
@@ -154,7 +176,7 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
           setIsPendingVerification(true);
 
           // Optional: If you want to move to password screen immediately after email check
-          // setCurrentView('set-password'); 
+          //setCurrentView('set-password'); 
         }
       }
 
@@ -162,7 +184,7 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
       // This is where you see "Email already exists" because Authorization was empty
       const msg = error.response?.data?.message || "Something went wrong";
       console.error("Backend Error Response:", error.response?.data);
-      alert(msg);
+      toast(msg);
     } finally {
       setLoading(false);
     }
@@ -215,7 +237,7 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
           // Import setApplicationSession at the top of this file if not already there
           if (newToken) {
             dispatch(setApplicationSession(newToken));
-            localStorage.setItem('token', newToken); // Backup
+
           }
 
           const userData = finalData?.user || {
@@ -341,9 +363,44 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
                 />
               </div>
 
+              <div className="space-y-2">
+                <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-tight">
+                  Skills / Key Expertise
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={skillInput}
+                    onChange={(e) => setSkillInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && addSkill(e)}
+                    placeholder="e.g. React, Node.js"
+                    className="flex-grow p-2.5 text-xs border border-gray-200 outline-none rounded-xl focus:ring-2 focus:ring-red-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={addSkill}
+                    className="bg-slate-100 p-2.5 rounded-xl hover:bg-slate-200 text-slate-600"
+                  >
+                    <Plus size={18} />
+                  </button>
+                </div>
+
+                {/* Skill Tags Display */}
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {skills.map((skill, index) => (
+                    <span key={index} className="flex items-center gap-1 bg-red-50 text-red-600 px-3 py-1 rounded-full text-[10px] font-bold border border-red-100">
+                      {skill}
+                      <button type="button" onClick={() => removeSkill(skill)}>
+                        <X size={12} className="hover:text-red-800" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
               <div className="max-w-full">
                 <label className="block text-[11px] font-bold text-gray-600 mb-1 uppercase tracking-tight">Resume/CV *</label>
-                {user?.savedResumeName && !selectedFile ? (
+                {(user?.savedResumeName || user?.resumeUrl) && !selectedFile ? (
                   <div className="flex items-center justify-between p-2 bg-blue-50 border border-blue-100 rounded-xl">
                     <div className="flex items-center gap-2 overflow-hidden">
                       <FileText className="text-blue-600 flex-shrink-0" size={14} />
@@ -401,9 +458,6 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
         </div>
       </div>
 
-      <footer className="w-full bg-black text-white/70 py-12 mt-20 text-center">
-        <p className="text-xs tracking-wider">© 2022 Bynaric All Rights Reserved. [wps_visitor_counter]</p>
-      </footer>
     </div>
   );
 };

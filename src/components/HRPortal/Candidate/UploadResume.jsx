@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { Upload, FileArchive, X, CheckCircle, FolderArchive, Loader2 } from 'lucide-react';
+import { Upload, FileArchive, X, CheckCircle, FolderArchive, Loader2, ArrowLeft } from 'lucide-react'; // Added ArrowLeft
 import toast from 'react-hot-toast';
 import { useSelector } from 'react-redux';
-import { api } from '../../../Api/api'; // Ensure this points to your axios instance
+import { useNavigate } from 'react-router-dom'; // Added useNavigate
+import { api } from '../../../Api/api';
 
 const UploadResume = () => {
     const [file, setFile] = useState(null);
     const [isDragging, setIsDragging] = useState(false);
     const [uploading, setUploading] = useState(false);
     
-    // Get token for authorization
+    const navigate = useNavigate(); // Initialize navigation
     const { token } = useSelector((state) => state.auth);
 
     const validateAndSetFile = (selectedFile) => {
@@ -31,50 +32,59 @@ const UploadResume = () => {
         validateAndSetFile(e.dataTransfer.files[0]);
     };
 
-   // UploadResume.jsx - Inside handleSubmit
-const handleSubmit = async () => {
-    if (!file) return;
+    const handleSubmit = async () => {
+        if (!file) return;
 
-    const formData = new FormData();
-    
-    // CHANGE THIS LINE: Match the key 'zipFile' defined in your backend router
-    formData.append('zipFile', file); 
+        const formData = new FormData();
+        formData.append('zipFile', file); 
 
-    setUploading(true);
-    const loadingToast = toast.loading("Extracting & analyzing resumes with AI...");
+        setUploading(true);
+        const loadingToast = toast.loading("Extracting & analyzing resumes with AI...");
 
-    try {
-        const response = await api.post('/admin/resumes/bulk-upload', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-                Authorization: `Bearer ${token}`
+        try {
+            const response = await api.post('/admin/resumes/bulk-upload', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            if (response.data.success) {
+                toast.success(response.data.message || "Bulk upload successful!", { id: loadingToast });
+                
+                // RESET STATE: This allows the next file to be uploaded immediately
+                setFile(null); 
+                setIsDragging(false);
             }
-        });
-
-        if (response.data.success) {
-            toast.success(response.data.message || "Bulk upload successful!", { id: loadingToast });
-            setFile(null);
+        } catch (error) {
+            console.error("Upload error:", error);
+            const errorMsg = error.response?.data?.message || "Failed to process resumes.";
+            toast.error(errorMsg, { id: loadingToast });
+        } finally {
+            setUploading(false);
         }
-    } catch (error) {
-        console.error("Upload error:", error);
-        // This will now show the specific error message from your backend if it fails again
-        const errorMsg = error.response?.data?.message || "Failed to process resumes.";
-        toast.error(errorMsg, { id: loadingToast });
-    } finally {
-        setUploading(false);
-    }
-};
+    };
 
     return (
         <div className="max-w-2xl mx-auto my-10 p-8 bg-white rounded-2xl shadow-lg border border-gray-100">
             
-            <div className="mb-6 border-b border-gray-50 pb-4">
-                <h2 className="text-xl font-bold text-gray-800 uppercase tracking-tight">
-                    Upload <span className="text-red-600">Resumes</span>
-                </h2>
-                <p className="text-gray-400 text-xs tracking-tight font-bold mt-1">
-                    Upload candidate resumes in bulk
-                </p>
+            {/* Header with Back Arrow */}
+            <div className="mb-6 border-b border-gray-50 pb-4 flex items-center gap-4">
+                <button 
+                    onClick={() => navigate(-1)} // Navigates back to the previous page
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600"
+                    title="Go Back"
+                >
+                    <ArrowLeft size={24} />
+                </button>
+                <div>
+                    <h2 className="text-xl font-bold text-gray-800 uppercase tracking-tight">
+                        Upload <span className="text-red-600">Resumes</span>
+                    </h2>
+                    <p className="text-gray-400 text-xs tracking-tight font-bold mt-1">
+                        Upload candidate resumes in bulk
+                    </p>
+                </div>
             </div>
 
             <div className="space-y-6">
@@ -89,7 +99,11 @@ const handleSubmit = async () => {
                         type="file"
                         accept=".zip"
                         disabled={uploading}
-                        onChange={(e) => validateAndSetFile(e.target.files[0])}
+                        value="" // IMPORTANT: Resetting value allows selecting the same filename twice
+                        onChange={(e) => {
+                            validateAndSetFile(e.target.files[0]);
+                            e.target.value = null; // Clears the input reference immediately
+                        }}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
                     />
                     

@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../../Api/api';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-// FIX: Import ArrowLeft to resolve the syntax/reference error
-import { ArrowLeft } from 'lucide-react'; 
+import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'; 
 
 const InterviewerList = () => {
     const [interviewers, setInterviewers] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+
+    // --- Pagination State ---
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5; // You can change this number
 
     useEffect(() => {
         fetchInterviewers();
@@ -18,27 +21,37 @@ const InterviewerList = () => {
         try {
             setLoading(true);
             const response = await api.get('/admin/interviewers');
-            
-            // Extract data and ensure it's an array to prevent .map() errors
-            const result = response.data.data || []; 
+            const result = response.data.data || [];
             setInterviewers(Array.isArray(result) ? result : []);
         } catch (err) {
             console.error("Fetch error:", err);
             toast.error("Could not fetch interviewers");
-            setInterviewers([]); 
+            setInterviewers([]);
         } finally {
             setLoading(false);
         }
     };
 
+    // --- Pagination Logic ---
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = interviewers.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(interviewers.length / itemsPerPage);
+
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
     const handleDelete = async (id) => {
         if (!id) return;
-        
         const toastId = toast.loading("Processing delete...");
         try {
             await api.delete(`/admin/interviewers/${id}`);
             setInterviewers(prev => prev.filter(item => (item.id || item._id) !== id));
             toast.success("Interviewer removed", { id: toastId });
+            
+            // Adjust page if the last item on the page is deleted
+            if (currentItems.length === 1 && currentPage > 1) {
+                setCurrentPage(currentPage - 1);
+            }
         } catch (err) {
             toast.error("Delete failed", { id: toastId });
         }
@@ -58,12 +71,10 @@ const InterviewerList = () => {
 
     return (
         <div className="p-8 bg-gray-50 min-h-screen font-sans">
-            {/* Header Section */}
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-4">
-                    {/* Back Button matching your Dashboard/Profile UI design */}
-                    <button 
-                        onClick={() => navigate('/landing')} 
+                    <button
+                        onClick={() => navigate('/landing')}
                         className="flex items-center justify-center text-slate-500 hover:text-red-600 transition-colors group"
                         title="Back to Dashboard"
                     >
@@ -71,11 +82,10 @@ const InterviewerList = () => {
                             <ArrowLeft size={20} />
                         </div>
                     </button>
-
                     <h2 className="text-2xl font-bold text-gray-800 tracking-tight uppercase">Interviewer List</h2>
                 </div>
 
-                <button 
+                <button
                     onClick={() => navigate('/addInterviwer')}
                     className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-xl font-bold flex items-center transition shadow-lg shadow-red-200 active:scale-95 text-xs uppercase tracking-wider"
                 >
@@ -83,7 +93,6 @@ const InterviewerList = () => {
                 </button>
             </div>
 
-            {/* Table UI */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden text-sm">
                 <table className="w-full text-left">
                     <thead className="bg-gray-50/50 border-b border-gray-100">
@@ -97,10 +106,10 @@ const InterviewerList = () => {
                     <tbody className="divide-y divide-gray-50">
                         {loading ? (
                             <tr><td colSpan="4" className="p-16 text-center text-gray-300 italic font-medium">Fetching records...</td></tr>
-                        ) : interviewers.length === 0 ? (
+                        ) : currentItems.length === 0 ? (
                             <tr><td colSpan="4" className="p-16 text-center text-gray-400 italic font-medium">No interviewers found.</td></tr>
                         ) : (
-                            interviewers.map((person) => (
+                            currentItems.map((person) => (
                                 <tr key={person.id || person._id} className="hover:bg-gray-50/80 transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="font-bold text-gray-900">{person.name}</div>
@@ -115,14 +124,14 @@ const InterviewerList = () => {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-right space-x-4">
-                                        <button 
-                                            onClick={() => navigate(`/Interviwer/${person.id || person._id}`, { state: { person } })} 
+                                        <button
+                                            onClick={() => navigate(`/Interviwer/edit/${person.id || person._id}`, { state: { person } })}
                                             className="text-gray-400 hover:text-gray-900 font-black text-[10px] uppercase tracking-widest transition-colors"
                                         >
                                             Edit
                                         </button>
-                                        <button 
-                                            onClick={() => confirmDelete(person.id || person._id)} 
+                                        <button
+                                            onClick={() => confirmDelete(person.id || person._id)}
                                             className="px-4 py-2 bg-slate-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition-all shadow-sm active:scale-95"
                                         >
                                             Delete
@@ -133,6 +142,49 @@ const InterviewerList = () => {
                         )}
                     </tbody>
                 </table>
+
+                {/* --- Pagination Footer --- */}
+                {!loading && interviewers.length > 0 && (
+                    <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
+                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                            Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, interviewers.length)} of {interviewers.length}
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => paginate(currentPage - 1)}
+                                disabled={currentPage === 1}
+                                className="p-2 bg-white border border-gray-200 rounded-lg text-gray-400 hover:text-red-600 disabled:opacity-30 disabled:hover:text-gray-400 transition-all"
+                            >
+                                <ChevronLeft size={16} />
+                            </button>
+                            
+                            {/* Page Numbers */}
+                            <div className="flex gap-1">
+                                {[...Array(totalPages)].map((_, i) => (
+                                    <button
+                                        key={i + 1}
+                                        onClick={() => paginate(i + 1)}
+                                        className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all ${
+                                            currentPage === i + 1 
+                                            ? 'bg-red-600 text-white' 
+                                            : 'bg-white border border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-600'
+                                        }`}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <button
+                                onClick={() => paginate(currentPage + 1)}
+                                disabled={currentPage === totalPages}
+                                className="p-2 bg-white border border-gray-200 rounded-lg text-gray-400 hover:text-red-600 disabled:opacity-30 disabled:hover:text-gray-400 transition-all"
+                            >
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

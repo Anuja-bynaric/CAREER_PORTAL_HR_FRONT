@@ -4,7 +4,7 @@ const Footer = () => {
   return (
     <footer className="bg-neutral-900 text-neutral-300 py-16 px-8 mt-12">
       <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-12 text-sm leading-relaxed">
-        
+
         {/* Quick Links Column */}
         <div className="space-y-4">
           <h3 className="font-semibold text-neutral-50 mb-3 text-base">Quick Links</h3>
@@ -66,10 +66,10 @@ const Footer = () => {
 
       {/* Social Media & Sub-Footer */}
       <div className="border-t border-neutral-700/50 mt-16 pt-8 max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-[11px] text-neutral-500 uppercase tracking-widest">
-        
+
         {/* Social Icons */}
         <div className="flex items-center gap-5 text-neutral-600">
-          
+
           <a href="https://www.instagram.com/bynaric_systems_pvt_ltd/" className="hover:text-pink-600 transition"><Instagram size={22} /></a>
           <a href="https://www.linkedin.com/uas/login?session_redirect=%2Fcompany%2F74949327" className="hover:text-sky-600 transition"><Linkedin size={22} /></a>
           <a href="https://www.facebook.com/BynaricSystems" className="hover:text-blue-600 transition"><Facebook size={22} /></a>
@@ -77,10 +77,10 @@ const Footer = () => {
 
         {/* Copyright */}
         <div className="text-center  md:text-left">
-          © 2026 Bynaric All Rights Reserved. 
+          © 2026 Bynaric All Rights Reserved.
         </div>
 
-       
+
 
       </div>
     </footer>

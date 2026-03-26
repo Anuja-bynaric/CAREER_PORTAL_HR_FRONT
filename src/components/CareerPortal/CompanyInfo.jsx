@@ -25,7 +25,7 @@ const CompanyInfo = () => {
     <section className="bg-white py-7 px-8 border-b border-gray-100">
       <div className="max-w-6xl mx-auto"> {/* Added mx-auto to center the section content */}
         <div className="grid md:grid-cols-2 gap-16 items-center">
-          
+
           {/* Left Side: Text Content */}
           <div>
             <h2 className="text-4xl font-black font-bold text-slate-900 leading-tight mb-6">
@@ -33,19 +33,19 @@ const CompanyInfo = () => {
             </h2>
             <div className="text-gray-600 text-lg leading-relaxed mb-8 space-y-4">
               <p>
-                We always apply best practice in the software development process and use the very latest technology. 
+                We always apply best practice in the software development process and use the very latest technology.
                 We build up young and talented software engineers to a world class level.
               </p>
               <p>
-                We warrant customer satisfaction to the best of our ability with reasonable cost and an 
+                We warrant customer satisfaction to the best of our ability with reasonable cost and an
                 excellent maintenance service provided by dedicated engineers.
               </p>
               <p>
-                We target web, software and Mobile App Development services to a diverse range of industries 
+                We target web, software and Mobile App Development services to a diverse range of industries
                 including Government, Healthcare, and Education.
               </p>
             </div>
-            
+
             <div className="space-y-4">
               {['Latest Tech Stack', 'Career Growth', 'AI-Driven Innovation'].map((item, i) => (
                 <div key={i} className="flex items-center space-x-3 text-slate-700 font-semibold">

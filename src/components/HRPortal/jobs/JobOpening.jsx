@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Briefcase, MapPin, Clock, AlignLeft, ListChecks, Layers, ArrowLeft } from 'lucide-react';
+import { Briefcase, MapPin, Clock, AlignLeft, ListChecks, Layers, ArrowLeft, Code2 } from 'lucide-react';
 import { api } from '../../../Api/api';
 import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
@@ -7,8 +7,6 @@ import { useNavigate } from 'react-router-dom';
 
 const JobOpening = () => {
     const navigate = useNavigate();
-    // Since we are moving to Cookie-based auth, we don't strictly need the token 
-    // from Redux if your 'api' instance already includes withCredentials: true.
     const { token } = useSelector((state) => state.auth);
 
     const [formData, setFormData] = useState({
@@ -16,9 +14,9 @@ const JobOpening = () => {
         location: '',
         experience: '',
         jobType: 'Full-time',
-        category: 'Engineering',
+       
         description: '',
-        requirements: '',
+        skills: '', // Renamed from requirements to skills for clarity
         responsibilities: ''
     });
 
@@ -34,11 +32,22 @@ const JobOpening = () => {
         setLoading(true);
 
         try {
+            // Convert comma-separated strings into clean arrays
             const submissionData = {
                 ...formData,
-                requirements: formData.requirements.split(',').map(item => item.trim()).filter(i => i !== ""),
-                responsibilities: formData.responsibilities.split(',').map(item => item.trim()).filter(i => i !== "")
+                // Send 'skills' array as 'requirements' to match your backend controller
+                requirements: formData.skills
+                    .split(',')
+                    .map(item => item.trim())
+                    .filter(i => i !== ""),
+                responsibilities: formData.responsibilities
+                    .split(',')
+                    .map(item => item.trim())
+                    .filter(i => i !== "")
             };
+
+            // Remove the 'skills' field so it doesn't duplicate data in the request
+            delete submissionData.skills;
 
             const response = await api.post('/admin/create/jobs', submissionData);
 
@@ -53,15 +62,13 @@ const JobOpening = () => {
         }
     };
 
-    // Scaled down styles
     const labelStyle = "flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase mb-2 tracking-widest";
     const inputStyle = "w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500/10 focus:border-red-500 outline-none transition-all placeholder:text-slate-300 text-[13px] text-slate-700 font-medium";
 
     return (
         <div className="min-h-screen bg-slate-50/30 font-sans text-slate-900 pb-20">
             <div className="max-w-4xl mx-auto px-6 py-8">
-
-                {/* Compact Header */}
+                {/* Header */}
                 <div className="flex items-center gap-4 mb-8">
                     <button
                         onClick={() => navigate('/job_Openings')}
@@ -79,20 +86,15 @@ const JobOpening = () => {
                     </div>
                 </div>
 
-                {/* Main Form Card - Reduced padding and rounding */}
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                     <div className="p-8 md:p-10">
                         <form onSubmit={handleSubmit} className="space-y-6">
-
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label className={labelStyle}><Briefcase size={14} className="text-red-500" /> Job Title</label>
                                     <input required type="text" name="title" value={formData.title} onChange={handleChange} placeholder="e.g. Frontend Developer" className={inputStyle} />
                                 </div>
-                                <div>
-                                    <label className={labelStyle}><Layers size={14} className="text-red-500" /> Category</label>
-                                    <input type="text" name="category" value={formData.category} onChange={handleChange} placeholder="Engineering" className={inputStyle} />
-                                </div>
+                              
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -111,7 +113,6 @@ const JobOpening = () => {
                                 </div>
                             </div>
 
-                            {/* Job Type Selectors */}
                             <div>
                                 <label className={labelStyle}>Job Type</label>
                                 <div className="flex flex-wrap gap-6 mt-1">
@@ -140,12 +141,26 @@ const JobOpening = () => {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className={labelStyle}><ListChecks size={14} className="text-red-500" /> Requirements</label>
-                                    <textarea name="requirements" rows="3" value={formData.requirements} onChange={handleChange} placeholder="React, Node.js..." className={`${inputStyle} resize-none text-[12px]`}></textarea>
+                                    <label className={labelStyle}><Code2 size={14} className="text-red-500" /> Technical Skills</label>
+                                    <textarea 
+                                        name="skills" 
+                                        rows="3" 
+                                        value={formData.skills} 
+                                        onChange={handleChange} 
+                                        placeholder="React, Node.js, TypeScript (comma separated)..." 
+                                        className={`${inputStyle} resize-none text-[12px]`}
+                                    ></textarea>
                                 </div>
                                 <div>
                                     <label className={labelStyle}><ListChecks size={14} className="text-red-500" /> Responsibilities</label>
-                                    <textarea name="responsibilities" rows="3" value={formData.responsibilities} onChange={handleChange} placeholder="Building UI..." className={`${inputStyle} resize-none text-[12px]`}></textarea>
+                                    <textarea 
+                                        name="responsibilities" 
+                                        rows="3" 
+                                        value={formData.responsibilities} 
+                                        onChange={handleChange} 
+                                        placeholder="Building UI, API Integration (comma separated)..." 
+                                        className={`${inputStyle} resize-none text-[12px]`}
+                                    ></textarea>
                                 </div>
                             </div>
 
