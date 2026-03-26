@@ -130,7 +130,7 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
     const finalToken = reduxToken;
 
     //console.log("--- DEBUG: Authorization Header ---", finalToken ? `Bearer ${finalToken}` : "MISSING");
-   try {
+    try {
 
 
       const data = new FormData();
@@ -144,10 +144,10 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
       data.append('skills', JSON.stringify(skills));
 
       if (selectedFile) {
-      data.append('resume', selectedFile);
-    } else if (user?.savedResumeName) {
-      data.append('savedResumeName', user.savedResumeName);
-    }
+        data.append('resume', selectedFile);
+      } else if (user?.savedResumeName) {
+        data.append('savedResumeName', user.savedResumeName);
+      }
 
       // 2. SEND THE REQUEST
       // NOTE: If reduxToken is null, we send an empty string. 
