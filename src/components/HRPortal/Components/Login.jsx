@@ -26,14 +26,15 @@ const Login = () => {
         toast.success(`Welcome, ${user.name}`);
 
         // Role-based Navigation logic
-        const role = user.role?.toLowerCase();
-        if (role === 'admin' || role === 'hr') {
-          navigate('/landing', { replace: true });
-        } else if (role === 'candidate') {
-          navigate('/dashboard', { replace: true });
-        } else {
-          toast.error("Role not recognized");
-        }
+        // const role = user.role?.toLowerCase();
+        // if (role === 'admin' || role === 'hr') {
+        //   navigate('/landing', { replace: true });
+        // } else if (role === 'candidate') {
+        //   navigate('/dashboard', { replace: true });
+        // } else {
+        //   toast.error("Role not recognized");
+        navigate('/landing')
+        // }
       }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Invalid Credentials');

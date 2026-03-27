@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Briefcase, MapPin, Clock, AlignLeft, ListChecks, Layers, ArrowLeft, Code2 } from 'lucide-react';
+import { Briefcase, MapPin, Clock, AlignLeft, ListChecks, ArrowLeft, Code2, Hash } from 'lucide-react';
 import { api } from '../../../Api/api';
 import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
@@ -12,11 +12,11 @@ const JobOpening = () => {
     const [formData, setFormData] = useState({
         title: '',
         location: '',
-        experience: '',
+        minExperience: '', // New field
+        maxExperience: '', // New field
         jobType: 'Full-time',
-       
         description: '',
-        skills: '', // Renamed from requirements to skills for clarity
+        skills: '', 
         responsibilities: ''
     });
 
@@ -28,14 +28,20 @@ const JobOpening = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // Basic validation: Min should not be greater than Max
+        if (parseInt(formData.minExperience) > parseInt(formData.maxExperience)) {
+            return toast.error("Min experience cannot be greater than Max experience");
+        }
+
         const loadingToast = toast.loading("Posting new job...");
         setLoading(true);
 
         try {
-            // Convert comma-separated strings into clean arrays
             const submissionData = {
                 ...formData,
-                // Send 'skills' array as 'requirements' to match your backend controller
+                // Combine experience for display or send separately depending on backend needs
+                experience: `${formData.minExperience}-${formData.maxExperience} years`,
                 requirements: formData.skills
                     .split(',')
                     .map(item => item.trim())
@@ -46,7 +52,6 @@ const JobOpening = () => {
                     .filter(i => i !== "")
             };
 
-            // Remove the 'skills' field so it doesn't duplicate data in the request
             delete submissionData.skills;
 
             const response = await api.post('/admin/create/jobs', submissionData);
@@ -89,15 +94,13 @@ const JobOpening = () => {
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                     <div className="p-8 md:p-10">
                         <form onSubmit={handleSubmit} className="space-y-6">
+                            
+                            {/* Row 1: Title and Location */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label className={labelStyle}><Briefcase size={14} className="text-red-500" /> Job Title</label>
                                     <input required type="text" name="title" value={formData.title} onChange={handleChange} placeholder="e.g. Frontend Developer" className={inputStyle} />
                                 </div>
-                              
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label className={labelStyle}><MapPin size={14} className="text-red-500" /> Location</label>
                                     <select name="location" value={formData.location} onChange={handleChange} required className={`${inputStyle} appearance-none cursor-pointer`}>
@@ -107,12 +110,21 @@ const JobOpening = () => {
                                         <option value="Remote">Remote</option>
                                     </select>
                                 </div>
+                            </div>
+
+                            {/* Row 2: Experience Range */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className={labelStyle}><Clock size={14} className="text-red-500" /> Experience</label>
-                                    <input required type="text" name="experience" value={formData.experience} onChange={handleChange} placeholder="e.g. 0-2 years" className={inputStyle} />
+                                    <label className={labelStyle}><Clock size={14} className="text-red-500" /> Min Experience (Years)</label>
+                                    <input required type="number" min="0" name="minExperience" value={formData.minExperience} onChange={handleChange} placeholder="0" className={inputStyle} />
+                                </div>
+                                <div>
+                                    <label className={labelStyle}><Hash size={14} className="text-red-500" /> Max Experience (Years)</label>
+                                    <input required type="number" min="0" name="maxExperience" value={formData.maxExperience} onChange={handleChange} placeholder="5" className={inputStyle} />
                                 </div>
                             </div>
 
+                            {/* Row 3: Job Type */}
                             <div>
                                 <label className={labelStyle}>Job Type</label>
                                 <div className="flex flex-wrap gap-6 mt-1">
@@ -134,11 +146,13 @@ const JobOpening = () => {
                                 </div>
                             </div>
 
+                            {/* Row 4: Description */}
                             <div>
                                 <label className={labelStyle}><AlignLeft size={14} className="text-red-500" /> Job Description</label>
                                 <textarea required name="description" rows="3" value={formData.description} onChange={handleChange} placeholder="Brief summary..." className={`${inputStyle} resize-none`}></textarea>
                             </div>
 
+                            {/* Row 5: Skills & Responsibilities */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label className={labelStyle}><Code2 size={14} className="text-red-500" /> Technical Skills</label>
@@ -147,7 +161,7 @@ const JobOpening = () => {
                                         rows="3" 
                                         value={formData.skills} 
                                         onChange={handleChange} 
-                                        placeholder="React, Node.js, TypeScript (comma separated)..." 
+                                        placeholder="React, Node.js, TypeScript..." 
                                         className={`${inputStyle} resize-none text-[12px]`}
                                     ></textarea>
                                 </div>
@@ -158,12 +172,13 @@ const JobOpening = () => {
                                         rows="3" 
                                         value={formData.responsibilities} 
                                         onChange={handleChange} 
-                                        placeholder="Building UI, API Integration (comma separated)..." 
+                                        placeholder="Building UI, API Integration..." 
                                         className={`${inputStyle} resize-none text-[12px]`}
                                     ></textarea>
                                 </div>
                             </div>
 
+                            {/* Submit Button */}
                             <div className="flex justify-end pt-4">
                                 <button
                                     type="submit"

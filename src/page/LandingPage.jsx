@@ -1,118 +1,156 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux'; 
-import { Calendar, Users, Briefcase, FileUp, ArrowRight } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { 
+  Calendar as CalendarIcon, 
+  Users, 
+  Briefcase, 
+  FileUp, 
+  ArrowRight, 
+  CheckCircle, 
+  Clock, 
+  FileText, 
+  UserCheck, 
+  TrendingUp, 
+  ChevronDown, 
+  XCircle 
+} from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
 
 const LandingPage = () => {
   const navigate = useNavigate();
-
-  // 1. Check for 'user' and 'isAuthenticated' instead of 'token'
-  // Since tokens are in cookies, Redux only tracks the user profile
   const { user, isAuthenticated } = useSelector((state) => state.auth);
+  const [value, onChange] = useState(new Date());
+  const [graphType, setGraphType] = useState('interview');
+
+  // Graph Data
+  const interviewData = [
+    { day: 'Mon', value: 4 }, { day: 'Tue', value: 8 }, { day: 'Wed', value: 5 },
+    { day: 'Thu', value: 12 }, { day: 'Fri', value: 9 }, { day: 'Sat', value: 2 }, { day: 'Sun', value: 1 },
+  ];
+
+  const candidateData = [
+    { day: 'Mon', value: 20 }, { day: 'Tue', value: 35 }, { day: 'Wed', value: 25 },
+    { day: 'Thu', value: 45 }, { day: 'Fri', value: 30 }, { day: 'Sat', value: 15 }, { day: 'Sun', value: 10 },
+  ];
+
+  // Combined Top Stats: Resume stats and remaining Interview stats side-by-side
+  const topRowStats = [
+    { label: "TOTAL RESUMES", count: 128, icon: <FileText size={18}/>, color: "text-purple-600", bg: "bg-purple-50" },
+    { label: "SHORTLISTED", count: 32, icon: <Users size={18}/>, color: "text-orange-600", bg: "bg-orange-50" },
+    { label: "TOTAL HIRED", count: 8, icon: <UserCheck size={18}/>, color: "text-red-600", bg: "bg-red-50" },
+    { label: "PENDING", count: 12, icon: <Clock size={18}/>, color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "COMPLETED", count: 45, icon: <CheckCircle size={18}/>, color: "text-green-600", bg: "bg-green-50" },
+    { label: "CANCELLED", count: 3, icon: <XCircle size={18}/>, color: "text-rose-600", bg: "bg-rose-50" },
+  ];
+
+  // Quick Action buttons
+  const actions = [
+    { title: "JOB OPENINGS", path: "/job_Openings", icon: <Briefcase size={22} />, bg: "bg-red-600" },
+    { title: "INTERVIEWERS", path: "/InterviewerList", icon: <Users size={22} />, bg: "bg-red-600" },
+    { title: "UPLOAD RESUMES", path: "/upload_Resume", icon: <FileUp size={22} />, bg: "bg-red-600" },
+    { title: "SCHEDULED INTERVIEWS", path: "/list_schedule_interview", icon: <CalendarIcon size={22} />, bg: "bg-red-600" }
+  ];
 
   useEffect(() => {
-    // 2. Redirect if not logged in
     if (!isAuthenticated && !user) {
-      console.warn("No active session found. Redirecting to login...");
-      toast.error("Please login to access the dashboard");
       navigate('/login'); 
       return;
     }
-
-    if (user) {
-      console.log("--- Dashboard Loaded ---");
-      console.log("User:", user.name);
-      console.log("Email:", user.email);
-    }
   }, [isAuthenticated, user, navigate]);
 
-  const actions = [
-    {
-      title: "Display Job Openings",
-      path: "/job_Openings",
-      description: "Review, edit, or remove current job listings.",
-      icon: <Briefcase size={24} />,
-      bg: "bg-red-600",
-    },
-    {
-      title: "Display Interviewer",
-      path: "/InterviewerList",
-      description: "Manage your team and assign interviewer roles.",
-      icon: <Users size={24} />,
-      bg: "bg-red-600",
-    },
-    {
-      title: "Upload Resume",
-      path: "/upload_Resume",
-      description: "Bulk upload candidate resumes in ZIP format for processing.", 
-      icon: <FileUp size={24} />, 
-      bg: "bg-red-600",
-    },
-    {
-      title: "Scheduled Interviews",
-      path: "/list_schedule_interview", 
-      description: "View and manage upcoming interview time slots.",
-      icon: <Calendar size={24} />,
-      bg: "bg-red-600",
-    }
-  ];
-
-  // 3. Prevent UI flicker during redirect
   if (!isAuthenticated && !user) return null;
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] font-sans text-slate-900">
-      <main className="max-w-6xl mx-auto px-6 py-12">
-        {/* Header Section */}
-        <div className="text-center mb-16">
-          <h2 className="text-2xl font-bold text-slate-800 uppercase tracking-tighter mb-2">
-            Welcome, {user?.name || 'HR Manager'}
-          </h2>
-          <div className="h-1 w-12 bg-red-600 mx-auto rounded-full mb-4"></div>
-         
+    <div className="min-h-screen bg-[#f8fafc] font-sans text-slate-900 pb-12">
+      <main className="max-w-full mx-auto px-6 py-8">
+        
+        {/* HEADER & TOP STATS ROW */}
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 mb-10">
+          <div>
+            <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Dashboard</h2>
+            <p className="text-slate-500 text-sm font-medium">Welcome, {user?.name || 'Samrat Bhosale'}</p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 w-full xl:w-auto">
+            {topRowStats.map((stat, i) => (
+              <div key={i} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3">
+                <div className={`${stat.bg} ${stat.color} p-2 rounded-lg`}>
+                  {stat.icon}
+                </div>
+                <div>
+                  <p className="text-slate-400 text-[8px] font-black uppercase tracking-widest leading-none mb-1">{stat.label}</p>
+                  <p className="text-lg font-black text-slate-800 leading-none">{stat.count}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Action Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* MIDDLE SECTION: CALENDAR & GRAPH */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+          <div className="lg:col-span-1 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+            <h3 className="text-xs font-black text-slate-800 mb-6 uppercase tracking-widest flex items-center italic">
+              <CalendarIcon size={18} className="mr-2 text-red-600" /> Event Calendar
+            </h3>
+            <Calendar onChange={onChange} value={value} className="border-none w-full text-sm font-medium" />
+          </div>
+
+          <div className="lg:col-span-2 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col relative">
+            <div className="flex justify-between items-center mb-8">
+               <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center italic">
+                 <TrendingUp size={18} className="mr-2 text-red-600" /> Interview Analytics
+               </h3>
+               <select 
+                 value={graphType} 
+                 onChange={(e) => setGraphType(e.target.value)}
+                 className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] font-black py-2 px-4 rounded-xl focus:outline-none uppercase cursor-pointer"
+               >
+                 <option value="interview">Interviews</option>
+                 <option value="candidate">Candidates</option>
+               </select>
+            </div>
+            
+            <div className="flex-grow min-h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={graphType === 'interview' ? interviewData : candidateData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11, fontWeight: 700}} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11}} />
+                  <Tooltip contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}} />
+                  <Line type="monotone" dataKey="value" stroke="#dc2626" strokeWidth={4} dot={{ r: 4, fill: '#dc2626' }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        {/* QUICK NAVIGATION (BOTTOM) */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
           {actions.map((item, idx) => (
             <div 
-              key={idx}
-              onClick={() => navigate(item.path)}
-              className="group bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm 
-                         transition-all duration-300 ease-in-out cursor-pointer
-                         hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1
-                         flex flex-col h-full relative overflow-hidden"
+              key={idx} 
+              onClick={() => navigate(item.path)} 
+              className="group bg-white p-5 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer flex items-center justify-between"
             >
-              {/* Subtle Background Icon Decoration */}
-              <div className="absolute -right-4 -bottom-4 text-slate-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                {React.cloneElement(item.icon, { size: 80 })}
+              <div className="flex items-center space-x-4">
+                <div className={`${item.bg} text-white p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform`}>{item.icon}</div>
+                <h3 className="text-[10px] font-black text-slate-700 uppercase tracking-widest">{item.title}</h3>
               </div>
-
-              {/* Icon Container */}
-              <div className={`${item.bg} w-12 h-12 rounded-xl flex items-center justify-center mb-6 shadow-lg transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 text-white`}>
-                {item.icon}
-              </div>
-
-              {/* Content */}
-              <div className="flex-grow relative z-10">
-                <h3 className="text-sm font-black text-slate-800 mb-2 uppercase tracking-tight group-hover:text-red-600 transition-colors">
-                  {item.title}
-                </h3>
-                <p className="text-slate-400 text-[10px] leading-relaxed font-bold uppercase tracking-wide">
-                  {item.description}
-                </p>
-              </div>
-
-              {/* Footer Link */}
-              <div className="mt-8 flex items-center text-slate-300 group-hover:text-red-600 transition-all duration-300">
-                <span className="text-[9px] font-black uppercase tracking-[0.2em]">Continue</span>
-                <ArrowRight size={12} className="ml-2 transition-transform duration-300 group-hover:translate-x-1" />
-              </div>
+              <ArrowRight size={16} className="text-slate-300 group-hover:text-red-600 transition-all" />
             </div>
           ))}
         </div>
+
       </main>
+
+      <style>{`
+        .react-calendar { border: none !important; width: 100% !important; }
+        .react-calendar__tile--active { background: #dc2626 !important; border-radius: 12px !important; color: white !important; }
+        .react-calendar__tile--now { background: #fee2e2 !important; border-radius: 12px !important; color: #dc2626 !important; }
+      `}</style>
     </div>
   );
 };

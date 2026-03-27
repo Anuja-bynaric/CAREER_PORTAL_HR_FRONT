@@ -159,7 +159,7 @@ const JobOpeningList = () => {
                     <tr key={job.id} className="hover:bg-slate-50/80 transition-colors group">
                       <td className="px-6 py-5">
                         <span
-                          onClick={() => onViewCandidates(job.jobId)}
+                          
                           className="text-slate-800 font-medium text-sm cursor-pointer hover:text-red-600 transition-colors"
                         >
                           {job.title}
