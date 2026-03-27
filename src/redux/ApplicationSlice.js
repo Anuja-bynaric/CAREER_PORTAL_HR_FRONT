@@ -1,4 +1,4 @@
-// ApplicationSlice.js
+
 import { createSlice } from '@reduxjs/toolkit';
 
 const applicationSlice = createSlice({

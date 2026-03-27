@@ -72,7 +72,9 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
         fullName: user.name || '',
         emailAddress: user.email || '',
         phoneNumber: user.phoneNumber || user.phone || '',
-        consentGiven: true
+        experience: user.experience || user.totalExperience || '',
+        consentGiven: true,
+        
       });
       if (user.skills) {
         if (Array.isArray(user.skills)) {
@@ -137,6 +139,7 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
       data.append('fullName', formData.fullName);
       data.append('emailAddress', formData.emailAddress);
       data.append('phoneNumber', formData.phoneNumber);
+      data.append('experience', formData.experience);
       const actualJobId = job.jobId || job.id || job._id || jobId;
       data.append('jobId', String(actualJobId));
       data.append('consentGiven', String(formData.consentGiven));
@@ -299,11 +302,19 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
         <div className="space-y-8">
           <div>
             <h3 className="text-2xl font-bold text-slate-900 mb-4">{job.title}</h3>
-            <div className="flex flex-wrap gap-4 text-gray-500 font-medium text-xs uppercase tracking-tight">
-              <span className="flex items-center gap-1"><MapPin size={16} /> {job.location}</span>
-              <span className="flex items-center gap-1"><Briefcase size={16} /> {job.exp}</span>
-              <span className="flex items-center gap-1"><Clock size={16} /> {job.type}</span>
+            <div className="flex flex-wrap gap-4 text-gray-500 font-medium text-[11px] uppercase tracking-wider mt-2">
+              {/* Only show if data exists */}
+              {job.location && (
+                <span className="flex items-center gap-1.5"><MapPin size={14} className="text-red-500" /> {job.location}</span>
+              )}
+              {(job.experience || job.exp) && (
+                <span className="flex items-center gap-1.5"><Briefcase size={14} className="text-red-500" /> {job.experience || job.exp}</span>
+              )}
+              {(job.jobType || job.type) && (
+                <span className="flex items-center gap-1.5"><Clock size={14} className="text-red-500" /> {job.jobType || job.type}</span>
+              )}
             </div>
+
           </div>
 
           <div className="prose prose-slate max-w-none">
@@ -384,6 +395,20 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
                     <Plus size={18} />
                   </button>
                 </div>
+                <div>
+                <label className="block text-[11px] font-bold text-gray-600 mb-1 uppercase tracking-tight">
+                  Total Experience *
+                </label>
+                <input
+                  type="text"
+                  name="experience"
+                  className="w-full p-2.5 text-xs border border-gray-200 focus:ring-2 focus:ring-red-500 outline-none rounded-xl"
+                  placeholder="e.g. 3.5 years or 2 to 3 years"
+                  value={formData.experience}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
 
                 {/* Skill Tags Display */}
                 <div className="flex flex-wrap gap-2 mt-2">

@@ -25,14 +25,14 @@ function Navbar() {
 
             // 3. Navigate to the login page (or /career as per your snippet)
             toast.success("Logged out successfully");
-            navigate('/'); 
+            navigate('/login'); 
             
             console.log("Cookie cleared and state reset");
         } catch (error) {
             console.error("Logout failed:", error);
             // Force frontend logout even if the network request fails
             dispatch(setLogout());
-            navigate('/');
+            navigate('/login');
         }
     };
 
@@ -72,7 +72,7 @@ function Navbar() {
                     </div>
                 ) : (
                     <button
-                        onClick={() => navigate('/')}
+                        onClick={() => navigate('/login')}
                         className="text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-red-600"
                     >
                         Sign In

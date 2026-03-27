@@ -162,8 +162,8 @@ const CareerPortal = () => {
               </div>
             ) : (
               <div className="text-center py-20">
-                <h3 className="text-xl font-bold text-gray-400">No matching jobs found.</h3>
-                <button onClick={fetchAllJobs} className="text-red-600 underline mt-2">View all jobs</button>
+                <h3 className="text-xl font-bold text-gray-400">No jobs found.</h3>
+                {/* <button onClick={fetchAllJobs} className="text-red-600 underline mt-2">View all jobs</button> */}
               </div>
             )}
           </div>
