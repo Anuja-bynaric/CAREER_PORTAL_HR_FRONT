@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { setLogout } from '../../../redux/authSlice';
 import { LogOut, User, ChevronDown } from 'lucide-react';
-import { api } from '../../../Api/api';
+import { api } from '../../../Api/api'; 
 import toast from 'react-hot-toast';
 
 const logo = "/assets/logo.png";
@@ -18,15 +18,15 @@ function Navbar() {
         try {
             // 1. Call Backend Logout API with required configuration
             // Using your endpoint: /user/logout with withCredentials: true
-            await api.post('/user/logout', {}, { withCredentials: true });
+            await api.post('/user/logout', {}, { withCredentials: true }); 
 
             // 2. Clear Redux State using your slice action
             dispatch(setLogout());
 
             // 3. Navigate to the login page (or /career as per your snippet)
             toast.success("Logged out successfully");
-            navigate('/login');
-
+            navigate('/'); 
+            
             console.log("Cookie cleared and state reset");
         } catch (error) {
             console.error("Logout failed:", error);

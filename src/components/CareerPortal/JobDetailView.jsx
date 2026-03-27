@@ -4,7 +4,7 @@ import axios from 'axios';
 import { api } from '../../Api/api';
 import { useNavigate, useLocation } from 'react-router-dom';
 import JobSelectionGate from './JobSelection.jsx';
-import LoginForm from './LoginForm.jsx';
+import Login from '../HRPortal/Components/Login.jsx';
 import Password from './Password.jsx';
 import toast from 'react-hot-toast';
 import { useParams } from 'react-router-dom';
@@ -58,6 +58,7 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
     fullName: '',
     emailAddress: '',
     phoneNumber: '',
+    experience: '',
     consentGiven: false
   });
 
@@ -72,6 +73,7 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
         fullName: user.name || '',
         emailAddress: user.email || '',
         phoneNumber: user.phoneNumber || user.phone || '',
+        experience: user.experience || user.totalExperience || '',
         consentGiven: true
       });
       if (user.skills) {
@@ -137,6 +139,7 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
       data.append('fullName', formData.fullName);
       data.append('emailAddress', formData.emailAddress);
       data.append('phoneNumber', formData.phoneNumber);
+      data.append('experience', formData.experience);
       const actualJobId = job.jobId || job.id || job._id || jobId;
       data.append('jobId', String(actualJobId));
       data.append('consentGiven', String(formData.consentGiven));
@@ -285,7 +288,7 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
   if (currentView === 'login') {
     return (
       <div className="min-h-screen flex flex-col bg-slate-50">
-        <LoginForm onBack={() => setCurrentView('selection')} onLoginSuccess={handleLoginSuccess} />
+        <Login onBack={() => setCurrentView('selection')} onLoginSuccess={handleLoginSuccess} />
         <footer className="w-full bg-black text-white/70 py-12 mt-20 text-center">
           <p className="text-xs tracking-wider">© 2022 Bynaric All Rights Reserved.</p>
         </footer>
@@ -374,6 +377,21 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
                   className="w-full p-2.5 text-xs border border-gray-200 focus:ring-2 focus:ring-red-500 outline-none rounded-xl"
                   placeholder="Phone Number"
                   value={formData.phoneNumber}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-gray-600 mb-1 uppercase tracking-tight">
+                  Total Experience *
+                </label>
+                <input
+                  type="text"
+                  name="experience"
+                  className="w-full p-2.5 text-xs border border-gray-200 focus:ring-2 focus:ring-red-500 outline-none rounded-xl"
+                  placeholder="e.g. 3.5 years or 2 to 3 years"
+                  value={formData.experience}
                   onChange={handleInputChange}
                   required
                 />

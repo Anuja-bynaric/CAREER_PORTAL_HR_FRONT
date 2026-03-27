@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Loader2, ChevronLeft } from 'lucide-react';
+import { Mail, Lock, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setLogin } from '../../../redux/authSlice';
-import { setApplicationSession } from '../../../redux/ApplicationSlice'; // IMPORT THIS
 import { api } from '../../../Api/api';
 import toast from 'react-hot-toast';
 
@@ -20,29 +19,22 @@ const Login = () => {
     setLoading(true);
     try {
       const response = await api.post('/user/login', { email, password });
-      const { user, token } = response.data;
+      const { user } = response.data;
 
-      if (user && token) {
-        // 1. Set Header so subsequent calls work
-        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      if (user) {
+        dispatch(setLogin({ user, token: response.data.token || null }));
+        toast.success(`Welcome, ${user.name}`);
 
-        // 2. CRITICAL: Update BOTH slices
-        // We update 'auth' because AuthWrapper reads 'user.role' from here
-        dispatch(setLogin({ user, token }));
-
-        // We update 'application' because your candidate logic uses this
-        dispatch(setApplicationSession(token));
-
-        const role = user.role?.toLowerCase();
-        console.log("Logged in user role:", role); // DEBUG LINE
-
-        if (role === 'candidate') {
-          toast.success(`Welcome, ${user.name}`);
-          // Navigate to dashboard
-          navigate('/dashboard', { replace: true });
-        } else if (role === 'admin' || role === 'hr') {
-          navigate('/landing', { replace: true });
-        }
+        // Role-based Navigation logic
+        // const role = user.role?.toLowerCase();
+        // if (role === 'admin' || role === 'hr') {
+        //   navigate('/landing', { replace: true });
+        // } else if (role === 'candidate') {
+        //   navigate('/dashboard', { replace: true });
+        // } else {
+        //   toast.error("Role not recognized");
+        navigate('/landing')
+        // }
       }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Invalid Credentials');
@@ -51,18 +43,10 @@ const Login = () => {
     }
   };
 
-  // ... (Keep your JSX exactly as it is)
-
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans">
       <div className="flex-grow flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-[440px] p-8 md:p-12 rounded-[2.5rem] border border-gray-100 shadow-sm">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center text-red-600 font-bold mb-4 text-[12px] hover:underline"
-          >
-            <ChevronLeft size={14} /> Back
-          </button>
           <div className="mb-10 text-center">
             <h1 className="text-3xl font-bold text-slate-900 mb-2">Login</h1>
             <p className="text-slate-400 text-sm">Enter your credentials.</p>

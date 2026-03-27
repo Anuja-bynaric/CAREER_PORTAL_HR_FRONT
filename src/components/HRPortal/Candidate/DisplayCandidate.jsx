@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { api } from '../../../Api/api';
-import { User, Download, ArrowLeft, Search, Loader2, AlertCircle, Eye, X } from 'lucide-react';
+import { User, Download, ArrowLeft, Search, Loader2, AlertCircle, Eye, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const DisplayCandidate = () => {
   const navigate = useNavigate();
@@ -14,8 +14,11 @@ const DisplayCandidate = () => {
   const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
-  
   const [selectedFile, setSelectedFile] = useState(null);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   useEffect(() => {
     const fetchCandidates = async () => {
@@ -42,29 +45,36 @@ const DisplayCandidate = () => {
     fetchCandidates();
   }, [jobId, token]);
 
-const finalFilteredData = candidates.filter(c => {
-  // 1. Setup variables for comparison
-  const name = c.fullName || '';
-  const email = c.email || '';
-  const phone = c.phoneNumber || '';
-  
-  // 2. Standardize status comparison (Case-insensitive + trimming)
-  const status = (c.status || 'Pending').toLowerCase().trim();
-  const activeFilter = statusFilter.toLowerCase().trim();
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
 
-  // 3. Define the matches
-  const matchesStatus = activeFilter === 'all' || status === activeFilter;
-  
-  const matchesSearch = 
-    name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    phone.includes(searchTerm);
+  const filteredData = candidates.filter(c => {
+    const name = c.fullName || '';
+    const email = c.email || '';
+    const phone = c.phoneNumber || '';
+    const skills = Array.isArray(c.skills) ? c.skills.join(' ') : (c.skills || '');
+    
+    const status = (c.status || 'Pending').toLowerCase().trim();
+    const activeFilter = statusFilter.toLowerCase().trim();
 
-  // 4. Return the combined result
-  return matchesStatus && matchesSearch;
-});
+    const matchesStatus = activeFilter === 'all' || status === activeFilter;
+    const matchesSearch = 
+      name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      skills.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      phone.includes(searchTerm);
 
-  // Updated to support the specific statuses provided
+    return matchesStatus && matchesSearch;
+  });
+
+  // Pagination Logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'Hired': return 'bg-green-100 text-green-700 border-green-200';
@@ -73,6 +83,22 @@ const finalFilteredData = candidates.filter(c => {
       case 'Pending': 
       default: return 'bg-amber-50 text-amber-600 border-amber-100';
     }
+  };
+
+  const renderSkills = (skills) => {
+    if (!skills) return <span className="text-slate-300 italic">No skills listed</span>;
+    const skillsArray = Array.isArray(skills) ? skills : skills.split(',').map(s => s.trim());
+    
+    return (
+      <div className="flex flex-wrap gap-1 mt-1">
+        {skillsArray.slice(0, 3).map((skill, idx) => (
+          <span key={idx} className="bg-slate-100 text-slate-600 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-tighter">
+            {skill}
+          </span>
+        ))}
+        {skillsArray.length > 3 && <span className="text-[9px] text-slate-400 font-bold">+{skillsArray.length - 3}</span>}
+      </div>
+    );
   };
 
   return (
@@ -99,13 +125,12 @@ const finalFilteredData = candidates.filter(c => {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input
               type="text"
-              placeholder="Search candidates..."
-              className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm outline-none"
+              placeholder="Search by name, email or skills..."
+              className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm outline-none focus:border-red-200 transition-all"
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
-          {/* UPDATED FILTER SECTION */}
           <div className="flex bg-white p-1 rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
             {['All', 'Pending', 'Shortlisted', 'Rejected', 'Hired'].map((status) => (
               <button
@@ -123,7 +148,7 @@ const finalFilteredData = candidates.filter(c => {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="px-6 py-4 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Candidate Info</th>
+                <th className="px-6 py-4 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Candidate & Skills</th>
                 <th className="px-6 py-4 text-[11px] font-semibold text-slate-500 uppercase tracking-wider text-center">Status</th>
                 <th className="px-6 py-4 text-[11px] font-semibold text-slate-500 uppercase tracking-wider text-center">Actions</th>
               </tr>
@@ -131,11 +156,11 @@ const finalFilteredData = candidates.filter(c => {
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr><td colSpan="3" className="py-20 text-center"><Loader2 className="animate-spin text-red-600 mx-auto" /></td></tr>
-              ) : finalFilteredData.length > 0 ? (
-                finalFilteredData.map((candidate) => (
-                  <tr key={candidate.id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer">
+              ) : currentItems.length > 0 ? (
+                currentItems.map((candidate) => (
+                  <tr key={candidate.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td
-                      className="px-6 py-4"
+                      className="px-6 py-4 cursor-pointer"
                       onClick={() => {
                         const candidateId = candidate.id;
                         navigate(`/candidate_Profile/${jobId}/${candidateId}`, {
@@ -148,8 +173,8 @@ const finalFilteredData = candidates.filter(c => {
                           <User size={18} />
                         </div>
                         <div>
-                          <p className="font-bold text-slate-800 text-sm">{candidate.fullName}</p>
-                          <p className="text-[11px] text-slate-500">{candidate.email} • {candidate.phoneNumber}</p>
+                          <p className="font-bold text-slate-800 text-sm group-hover:text-red-600 transition-colors">{candidate.fullName}</p>
+                          {renderSkills(candidate.skills)}
                         </div>
                       </div>
                     </td>
@@ -180,10 +205,46 @@ const finalFilteredData = candidates.filter(c => {
                   </tr>
                 ))
               ) : (
-                <tr><td colSpan="3" className="py-20 text-center text-slate-400 text-xs font-bold uppercase tracking-widest">No {statusFilter !== 'All' ? statusFilter.toLowerCase() : ''} candidates found</td></tr>
+                <tr><td colSpan="3" className="py-20 text-center text-slate-400 text-xs font-bold uppercase tracking-widest">No candidates found</td></tr>
               )}
             </tbody>
           </table>
+
+          {/* PAGINATION FOOTER */}
+          {!loading && filteredData.length > 0 && (
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredData.length)} of {filteredData.length} entries
+              </p>
+              <div className="flex items-center gap-1">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(prev => prev - 1)}
+                  className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 transition-all"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                
+                {[...Array(totalPages)].map((_, i) => (
+                  <button
+                    key={i + 1}
+                    onClick={() => setCurrentPage(i + 1)}
+                    className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all ${currentPage === i + 1 ? 'bg-red-600 text-white shadow-md shadow-red-200' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(prev => prev + 1)}
+                  className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 transition-all"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
