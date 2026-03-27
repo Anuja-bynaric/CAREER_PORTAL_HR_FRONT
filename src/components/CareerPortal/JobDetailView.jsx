@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 import { useParams } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { clearApplicationSession, setApplicationSession } from '../../redux/ApplicationSlice.js';
+import { SKILL_GROUPS } from './skillsData';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -20,6 +21,7 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
   const [job, setJob] = useState(state?.job || null);
   const [skills, setSkills] = useState([]); // State for the skills tags
   const [skillInput, setSkillInput] = useState('');
+  const [activeGroup, setActiveGroup] = useState(null);
   const reduxToken = useSelector((state) => state.application?.appToken);
 
   const [selectedFile, setSelectedFile] = useState(null);
@@ -390,24 +392,61 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
                   type="text"
                   name="experience"
                   className="w-full p-2.5 text-xs border border-gray-200 focus:ring-2 focus:ring-red-500 outline-none rounded-xl"
-                  placeholder="e.g. 3.5 years or 2 to 3 years"
+                  placeholder="e.g. 3.5 years"
                   value={formData.experience}
                   onChange={handleInputChange}
                   required
                 />
               </div>
 
-              <div className="space-y-2">
+              {/* --- SKILLS SECTION UPDATED --- */}
+              <div className="space-y-4">
                 <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-tight">
-                  Skills / Key Expertise
+                  Skills / Key Expertise *
                 </label>
+
+                <div className="flex flex-wrap gap-2">
+                  {Object.keys(SKILL_GROUPS).map((group) => (
+                    <button
+                      key={group}
+                      type="button"
+                      onClick={() => setActiveGroup(activeGroup === group ? null : group)}
+                      className={`px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all border 
+          ${activeGroup === group
+                          ? 'bg-red-600 text-white border-red-600 shadow-md'
+                          : 'bg-white text-gray-500 border-gray-200 hover:border-red-300'}`}
+                    >
+                      {group}
+                    </button>
+                  ))}
+                </div>
+
+                {activeGroup && (
+                  <div className="flex flex-wrap gap-2 p-3 bg-slate-50 rounded-2xl border border-gray-100 animate-in fade-in zoom-in duration-200">
+                    {SKILL_GROUPS[activeGroup]
+                      .filter(s => !skills.includes(s))
+                      .map((skill) => (
+                        <button
+                          key={skill}
+                          type="button"
+                          onClick={() => {
+                            setSkills([...skills, skill]);
+                          }}
+                          className="px-3 py-1 bg-white border border-gray-200 rounded-lg text-[10px] text-gray-600 hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors"
+                        >
+                          + {skill}
+                        </button>
+                      ))}
+                  </div>
+                )}
+
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={skillInput}
                     onChange={(e) => setSkillInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && addSkill(e)}
-                    placeholder="e.g. React, Node.js"
+                    placeholder="Type to add other skills..."
                     className="flex-grow p-2.5 text-xs border border-gray-200 outline-none rounded-xl focus:ring-2 focus:ring-red-500"
                   />
                   <button
@@ -418,14 +457,12 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
                     <Plus size={18} />
                   </button>
                 </div>
-
-                {/* Skill Tags Display */}
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="flex flex-wrap gap-2 pt-2">
                   {skills.map((skill, index) => (
-                    <span key={index} className="flex items-center gap-1 bg-red-50 text-red-600 px-3 py-1 rounded-full text-[10px] font-bold border border-red-100">
+                    <span key={index} className="flex items-center gap-1.5 bg-red-50 text-red-600 px-3 py-1 rounded-full text-[10px] font-bold border border-red-100 shadow-sm animate-in scale-in">
                       {skill}
-                      <button type="button" onClick={() => removeSkill(skill)}>
-                        <X size={12} className="hover:text-red-800" />
+                      <button type="button" onClick={() => removeSkill(skill)} className="hover:bg-red-200 rounded-full p-0.5">
+                        <X size={10} />
                       </button>
                     </span>
                   ))}

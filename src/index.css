@@ -1,1 +1,23 @@
 @import "tailwindcss";
+/* Customizing React Calendar to look modern */
+.react-calendar {
+  border: none !important;
+  font-family: 'Inter', sans-serif;
+  width: 100% !important;
+}
+
+.react-calendar__tile--active {
+  background: #dc2626 !important; /* Red-600 */
+  border-radius: 8px;
+  color: white !important;
+}
+
+.react-calendar__tile--now {
+  background: #fee2e2 !important;
+  border-radius: 8px;
+  color: #dc2626 !important;
+}
+
+.react-calendar__navigation button:hover {
+  background-color: #f8fafc !important;
+}
