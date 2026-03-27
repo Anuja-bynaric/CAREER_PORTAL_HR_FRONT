@@ -8,7 +8,7 @@ import AdminRoutes from './route/HrRoute';
 
 // Public Components
 import CareerPortal from './components/CareerPortal/CareerPortal';
-import LoginForm from './components/HRPortal/Components/Login';
+import Login from './components/HRPortal/Components/Login'
 import JobDetailView from './components/CareerPortal/JobDetailView';
 import Password from './components/CareerPortal/Password';
 import Navbar from './components/HRPortal/Components/Navbar';
@@ -23,7 +23,7 @@ const App = () => {
       <Routes>
         {/* --- PUBLIC ROUTES --- */}
         <Route path='/' element={<CareerPortal />} />
-        <Route path='/login' element={<LoginForm />} />
+        <Route path='/login' element={<Login />} />
         <Route path="/job/:jobId" element={<JobDetailView />} />
         <Route path='/set-password' element={<Password />} />
 
@@ -32,9 +32,9 @@ const App = () => {
         {AdminRoutes}
 
         {/* --- CATCH-ALL --- */}
-        <Route path="*" element={<LoginForm />} />
+        <Route path="*" element={<Login />} />
       </Routes>
-      
+
       <Footer />
     </Router>
   );

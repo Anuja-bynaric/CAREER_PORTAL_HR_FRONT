@@ -34,7 +34,7 @@ const JobSelectionGate = () => {
             <div className="bg-white border-b border-slate-200 pt-12 pb-8 px-8 lg:px-20">
                 <div className="max-w-7xl mx-auto">
                     <button
-                        onClick={() => navigate('/career')}
+                        onClick={() => navigate('/')}
                         className="flex items-center text-slate-500 hover:text-red-600 mb-4 transition-colors text-[11px] font-medium uppercase tracking-widest"
                     >
                         <ChevronLeft size={14} className="mr-1" /> Back to Job List

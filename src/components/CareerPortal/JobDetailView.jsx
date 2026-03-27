@@ -225,36 +225,45 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
 
   // --- VIEW: SET PASSWORD ---
   // --- VIEW: SET PASSWORD ---
+  // 1. Make sure you import the login action from your main auth slice at the top
+  // import { setLogin } from '../../redux/authSlice'; 
+
+  // ... inside JobDetailView.jsx
+
   if (currentView === 'set-password') {
     return (
       <Password
         token={backendToken}
         onPasswordSuccess={(finalData) => {
-          // 1. EXTRACT THE NEW TOKEN (Assuming your Password.jsx returns it)
           const newToken = finalData?.token || backendToken;
-
-          // 2. 🔥 SAVE TO REDUX (This stops the "null" issue)
-          // Import setApplicationSession at the top of this file if not already there
-          if (newToken) {
-            dispatch(setApplicationSession(newToken));
-
-          }
-
           const userData = finalData?.user || {
             name: formData.fullName,
             email: formData.emailAddress,
-            phone: formData.phoneNumber,
-            savedResumeName: selectedFile?.name
+            role: 'candidate' // Ensure the role matches what AuthWrapper expects
           };
 
+          if (newToken) {
+            // UPDATE BOTH SLICES
+            api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+            dispatch(setApplicationSession(newToken));
+
+            // THIS IS THE KEY: satisfies the AuthWrapper/ProtectedRoute
+            // Replace 'setLogin' with your actual action name (e.g., loginSuccess, setUser)
+            dispatch(setLogin({
+              user: userData,
+              token: newToken,
+              isAuthenticated: true
+            }));
+
+          }
           setUser(userData);
           setIsPendingVerification(false);
 
-          if (onLoginSuccess) onLoginSuccess(userData);
-          if (onAppliedSuccess) onAppliedSuccess(job.id);
-
-          // Redirect to Dashboard since they are now a fully registered user
-          navigate('/dashboard');
+          // Use a small delay so Redux can propagate the "Authenticated" state 
+          // before the Route Guard checks it
+          setTimeout(() => {
+            navigate('/dashboard', { replace: true });
+          }, 150);
         }}
       />
     );
@@ -299,10 +308,17 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
         <div className="space-y-8">
           <div>
             <h3 className="text-2xl font-bold text-slate-900 mb-4">{job.title}</h3>
-            <div className="flex flex-wrap gap-4 text-gray-500 font-medium text-xs uppercase tracking-tight">
-              <span className="flex items-center gap-1"><MapPin size={16} /> {job.location}</span>
-              <span className="flex items-center gap-1"><Briefcase size={16} /> {job.exp}</span>
-              <span className="flex items-center gap-1"><Clock size={16} /> {job.type}</span>
+            <div className="flex flex-wrap gap-4 text-gray-500 font-medium text-[11px] uppercase tracking-wider mt-2">
+              {/* Only show if data exists */}
+              {job.location && (
+                <span className="flex items-center gap-1.5"><MapPin size={14} className="text-red-500" /> {job.location}</span>
+              )}
+              {(job.experience || job.exp) && (
+                <span className="flex items-center gap-1.5"><Briefcase size={14} className="text-red-500" /> {job.experience || job.exp}</span>
+              )}
+              {(job.jobType || job.type) && (
+                <span className="flex items-center gap-1.5"><Clock size={14} className="text-red-500" /> {job.jobType || job.type}</span>
+              )}
             </div>
           </div>
 

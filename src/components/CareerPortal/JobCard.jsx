@@ -1,47 +1,56 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 const JobCard = ({ location, title, exp, type, description, onApply, isApplied }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   return (
-    <div className={`bg-white p-6 border shadow-sm transition-all group border-l-4 mb-5 rounded-r-xl ${isApplied
-      ? "border-l-green-500 border-gray-100"
-      : "border-l-transparent border-gray-100 hover:shadow-md hover:border-l-red-600"
+    <div className={`bg-white p-5 border shadow-sm transition-all group border-l-4 mb-4 rounded-r-xl max-w-full overflow-hidden ${isApplied ? "border-l-green-500 border-gray-100" : "border-l-transparent border-gray-100 hover:shadow-md hover:border-l-red-600"
       }`}>
-      <div className="flex justify-between items-start">
-        <div className="flex-1">
-          <span className="text-[10px] font-medium text-red-600 uppercase tracking-widest">{location}</span>
-          {/* Decreased font size from 2xl to lg and weight to medium */}
-          <h3 className="text-lg font-medium mt-1 text-slate-800 group-hover:text-red-600 transition tracking-tight">
+      <div className="flex justify-between items-start gap-4">
+        <div className="flex-1 min-w-0"> {/* min-w-0 prevents title overflow too */}
+          <span className="text-[9px] font-bold text-red-600 uppercase tracking-widest">{location}</span>
+          <h3 className="text-md font-semibold mt-0.5 text-slate-800 group-hover:text-red-600 transition tracking-tight truncate">
             {title}
           </h3>
-          <div className="flex gap-3 mt-3">
-            {/* Decreased badge text to xs */}
-            <span className="text-[11px] text-slate-500 bg-slate-50 border border-slate-100 px-3 py-1 rounded-full font-medium">
-              {exp}
-            </span>
-            <span className="text-[11px] text-slate-500 bg-slate-50 border border-slate-100 px-3 py-1 rounded-full font-medium">
-              {type}
-            </span>
+          <div className="flex gap-2 mt-2">
+            <span className="text-[10px] text-slate-500 bg-slate-50 border border-slate-100 px-2.5 py-0.5 rounded-full font-medium">{exp}</span>
+            <span className="text-[10px] text-slate-500 bg-slate-50 border border-slate-100 px-2.5 py-0.5 rounded-full font-medium">{type}</span>
           </div>
         </div>
 
-        {/* Enhanced button with smaller, cleaner font */}
         <button
-          // Using disabled={isApplied} is cleaner than isApplied ? null : onApply
           onClick={onApply}
           disabled={isApplied}
-          className={`px-5 py-2 rounded-lg transition-all text-xs font-medium shadow-sm active:scale-95 ${isApplied
-              ? "bg-green-50 text-green-600 border border-green-100 cursor-default"
-              : "bg-white border border-slate-200 text-slate-600 group-hover:bg-red-600 group-hover:text-white group-hover:border-red-600"
+          className={`shrink-0 px-4 py-1.5 rounded-lg transition-all text-[11px] font-bold shadow-sm active:scale-95 ${isApplied ? "bg-green-50 text-green-600 border border-green-100 cursor-default" : "bg-red-600 text-white hover:bg-red-700"
             }`}
         >
           {isApplied ? "Applied" : "Apply Now"}
         </button>
       </div>
 
-      {/* Decreased description font and weight */}
-      <p className="mt-4 text-slate-500 text-xs font-normal line-clamp-2 leading-relaxed italic">
-        "{description}"
-      </p>
+      {/* DESCRIPTION SECTION - WIDTH FIXED */}
+      <div className="mt-4 flex items-center justify-between gap-3 overflow-hidden w-full">
+        <div className="flex-1 min-w-0"> {/* CRITICAL: min-w-0 stops the width expansion */}
+          <p className={`text-slate-500 text-[11px] leading-relaxed italic ${!isExpanded ? "truncate" : "whitespace-normal"}`}>
+            "{description}"
+          </p>
+        </div>
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsExpanded(!isExpanded);
+          }}
+          className="shrink-0 flex items-center gap-0.5 text-red-600 text-[10px] font-bold hover:underline cursor-pointer uppercase tracking-tighter"
+        >
+          {isExpanded ? (
+            <>Less <ChevronUp size={12} /></>
+          ) : (
+            <>... More <ChevronDown size={12} /></>
+          )}
+        </button>
+      </div>
     </div>
   );
 };
