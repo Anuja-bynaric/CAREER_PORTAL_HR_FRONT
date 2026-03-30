@@ -60,7 +60,7 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
     fullName: '',
     emailAddress: '',
     phoneNumber: '',
-    experience:'',
+    experience: '',
     consentGiven: false
   });
 
@@ -77,7 +77,7 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
         phoneNumber: user.phoneNumber || user.phone || '',
         experience: user.experience || user.totalExperience || '',
         consentGiven: true,
-        
+
       });
       if (user.skills) {
         if (Array.isArray(user.skills)) {
@@ -372,6 +372,21 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
                   className="w-full p-2.5 text-xs border border-gray-200 focus:ring-2 focus:ring-red-500 outline-none rounded-xl"
                   placeholder="Phone Number"
                   value={formData.phoneNumber}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-gray-600 mb-1 uppercase tracking-tight">
+                  Experience (in years) *
+                </label>
+                <input
+                  type="number" // or "text"
+                  name="experience"
+                  className="w-full p-2.5 text-xs border border-gray-200 focus:ring-2 focus:ring-red-500 outline-none rounded-xl"
+                  placeholder="e.g. 5"
+                  value={formData.experience}
                   onChange={handleInputChange}
                   required
                 />

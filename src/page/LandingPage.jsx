@@ -1,19 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux'; 
-import { 
-  Calendar as CalendarIcon, 
-  Users, 
-  Briefcase, 
-  FileUp, 
-  ArrowRight, 
-  CheckCircle, 
-  Clock, 
-  FileText, 
-  UserCheck, 
-  TrendingUp, 
-  ChevronDown, 
-  XCircle 
+import { useSelector } from 'react-redux';
+import axios from 'axios';
+import { api } from '../Api/api';
+import {
+  Calendar as CalendarIcon, Users, Briefcase, FileUp, ArrowRight,
+  CheckCircle, Clock, FileText, UserCheck, TrendingUp, XCircle
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Calendar from 'react-calendar';
@@ -24,29 +16,10 @@ const LandingPage = () => {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   const [value, onChange] = useState(new Date());
   const [graphType, setGraphType] = useState('interview');
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Graph Data
-  const interviewData = [
-    { day: 'Mon', value: 4 }, { day: 'Tue', value: 8 }, { day: 'Wed', value: 5 },
-    { day: 'Thu', value: 12 }, { day: 'Fri', value: 9 }, { day: 'Sat', value: 2 }, { day: 'Sun', value: 1 },
-  ];
-
-  const candidateData = [
-    { day: 'Mon', value: 20 }, { day: 'Tue', value: 35 }, { day: 'Wed', value: 25 },
-    { day: 'Thu', value: 45 }, { day: 'Fri', value: 30 }, { day: 'Sat', value: 15 }, { day: 'Sun', value: 10 },
-  ];
-
-  // Combined Top Stats: Resume stats and remaining Interview stats side-by-side
-  const topRowStats = [
-    { label: "TOTAL RESUMES", count: 128, icon: <FileText size={18}/>, color: "text-purple-600", bg: "bg-purple-50" },
-    { label: "SHORTLISTED", count: 32, icon: <Users size={18}/>, color: "text-orange-600", bg: "bg-orange-50" },
-    { label: "TOTAL HIRED", count: 8, icon: <UserCheck size={18}/>, color: "text-red-600", bg: "bg-red-50" },
-    { label: "PENDING", count: 12, icon: <Clock size={18}/>, color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "COMPLETED", count: 45, icon: <CheckCircle size={18}/>, color: "text-green-600", bg: "bg-green-50" },
-    { label: "CANCELLED", count: 3, icon: <XCircle size={18}/>, color: "text-rose-600", bg: "bg-rose-50" },
-  ];
-
-  // Quick Action buttons
+  // 1. Define the Actions array (Fixes the ReferenceError)
   const actions = [
     { title: "JOB OPENINGS", path: "/job_Openings", icon: <Briefcase size={22} />, bg: "bg-red-600" },
     { title: "INTERVIEWERS", path: "/InterviewerList", icon: <Users size={22} />, bg: "bg-red-600" },
@@ -55,23 +28,54 @@ const LandingPage = () => {
   ];
 
   useEffect(() => {
-    if (!isAuthenticated && !user) {
-      navigate('/login'); 
-      return;
-    }
-  }, [isAuthenticated, user, navigate]);
+    const fetchAnalytics = async () => {
+      try {
+        // Updated URL to match your backend exactly
+        const response = await api.get('http://localhost:5000/analytics', {
+          withCredentials: true
+        });
+        if (response.data.success) {
+          setStats(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching analytics:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  if (!isAuthenticated && !user) return null;
+    if (isAuthenticated) {
+      fetchAnalytics();
+    } else {
+      navigate('/login');
+    }
+  }, [isAuthenticated, navigate]);
+
+  const topRowStats = [
+    { label: "TOTAL RESUMES", count: stats?.totalApplications || 0, icon: <FileText size={18} />, color: "text-purple-600", bg: "bg-purple-50" },
+    { label: "SHORTLISTED", count: stats?.shortlistedApplications || 0, icon: <Users size={18} />, color: "text-orange-600", bg: "bg-orange-50" },
+    { label: "TOTAL HIRED", count: stats?.hiredApplications || 0, icon: <UserCheck size={18} />, color: "text-red-600", bg: "bg-red-50" },
+    { label: "PENDING", count: stats?.pendingApplications || 0, icon: <Clock size={18} />, color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "COMPLETED", count: stats?.totalInterviewsCompleted || 0, icon: <CheckCircle size={18} />, color: "text-green-600", bg: "bg-green-50" },
+    { label: "CANCELLED", count: stats?.totalInterviewsCancelled || 0, icon: <XCircle size={18} />, color: "text-rose-600", bg: "bg-rose-50" },
+  ];
+
+  const interviewData = [
+    { day: 'Mon', value: 4 }, { day: 'Tue', value: 8 }, { day: 'Wed', value: 5 },
+    { day: 'Thu', value: stats?.totalInterviewsScheduled || 0 }, { day: 'Fri', value: 9 }, { day: 'Sat', value: 2 }, { day: 'Sun', value: 1 },
+  ];
+
+  if (loading) return <div className="flex items-center justify-center min-h-screen font-bold">Loading Stats...</div>;
 
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans text-slate-900 pb-12">
       <main className="max-w-full mx-auto px-6 py-8">
-        
+
         {/* HEADER & TOP STATS ROW */}
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 mb-10">
           <div>
             <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Dashboard</h2>
-            <p className="text-slate-500 text-sm font-medium">Welcome, {user?.name || 'Samrat Bhosale'}</p>
+            <p className="text-slate-500 text-sm font-medium">Welcome, {user?.name || 'User'}</p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 w-full xl:w-auto">
@@ -100,26 +104,26 @@ const LandingPage = () => {
 
           <div className="lg:col-span-2 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col relative">
             <div className="flex justify-between items-center mb-8">
-               <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center italic">
-                 <TrendingUp size={18} className="mr-2 text-red-600" /> Interview Analytics
-               </h3>
-               <select 
-                 value={graphType} 
-                 onChange={(e) => setGraphType(e.target.value)}
-                 className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] font-black py-2 px-4 rounded-xl focus:outline-none uppercase cursor-pointer"
-               >
-                 <option value="interview">Interviews</option>
-                 <option value="candidate">Candidates</option>
-               </select>
+              <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center italic">
+                <TrendingUp size={18} className="mr-2 text-red-600" /> Interview Analytics
+              </h3>
+              <select
+                value={graphType}
+                onChange={(e) => setGraphType(e.target.value)}
+                className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] font-black py-2 px-4 rounded-xl focus:outline-none uppercase cursor-pointer"
+              >
+                <option value="interview">Interviews</option>
+                <option value="candidate">Candidates</option>
+              </select>
             </div>
-            
+
             <div className="flex-grow min-h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={graphType === 'interview' ? interviewData : candidateData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11, fontWeight: 700}} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11}} />
-                  <Tooltip contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}} />
+                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 700 }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
                   <Line type="monotone" dataKey="value" stroke="#dc2626" strokeWidth={4} dot={{ r: 4, fill: '#dc2626' }} />
                 </LineChart>
               </ResponsiveContainer>
@@ -130,9 +134,9 @@ const LandingPage = () => {
         {/* QUICK NAVIGATION (BOTTOM) */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
           {actions.map((item, idx) => (
-            <div 
-              key={idx} 
-              onClick={() => navigate(item.path)} 
+            <div
+              key={idx}
+              onClick={() => navigate(item.path)}
               className="group bg-white p-5 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer flex items-center justify-between"
             >
               <div className="flex items-center space-x-4">
