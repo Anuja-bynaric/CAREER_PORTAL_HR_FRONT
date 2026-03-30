@@ -31,9 +31,7 @@ const LandingPage = () => {
     const fetchAnalytics = async () => {
       try {
         // Updated URL to match your backend exactly
-        const response = await api.get('http://localhost:5000/analytics', {
-          withCredentials: true
-        });
+        const response = await api.get('/analytics');
         if (response.data.success) {
           setStats(response.data.data);
         }
