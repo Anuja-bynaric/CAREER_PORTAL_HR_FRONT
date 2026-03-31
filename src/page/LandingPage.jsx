@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import axios from 'axios';
 import { api } from '../Api/api';
 import {
   Calendar as CalendarIcon, Users, Briefcase, FileUp, ArrowRight,
@@ -19,7 +18,6 @@ const LandingPage = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 1. Define the Actions array (Fixes the ReferenceError)
   const actions = [
     { title: "JOB OPENINGS", path: "/job_Openings", icon: <Briefcase size={22} />, bg: "bg-red-600" },
     { title: "INTERVIEWERS", path: "/InterviewerList", icon: <Users size={22} />, bg: "bg-red-600" },
@@ -30,8 +28,12 @@ const LandingPage = () => {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        // Updated URL to match your backend exactly
-        const response = await api.get('/analytics');
+        // Switch endpoint based on user role (HR vs Interviewer)
+        const endpoint = user?.role === 'interviewer'
+          ? `/analytics/interviewer/${user.id}`
+          : '/analytics';
+
+        const response = await api.get(endpoint);
         if (response.data.success) {
           setStats(response.data.data);
         }
@@ -47,7 +49,13 @@ const LandingPage = () => {
     } else {
       navigate('/login');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, user]);
+
+  // Google OAuth Trigger linked to the "Sync Google" text
+  const handleGoogleSync = () => {
+    const backendUrl = "https://career-portal-back.onrender.com";
+    window.location.href = `${backendUrl}/auth/google?userId=${user.id}`;
+  };
 
   const topRowStats = [
     { label: "TOTAL RESUMES", count: stats?.totalApplications || 0, icon: <FileText size={18} />, color: "text-purple-600", bg: "bg-purple-50" },
@@ -58,30 +66,42 @@ const LandingPage = () => {
     { label: "CANCELLED", count: stats?.totalInterviewsCancelled || 0, icon: <XCircle size={18} />, color: "text-rose-600", bg: "bg-rose-50" },
   ];
 
-  const interviewData = [
-    { day: 'Mon', value: 4 }, { day: 'Tue', value: 8 }, { day: 'Wed', value: 5 },
-    { day: 'Thu', value: stats?.totalInterviewsScheduled || 0 }, { day: 'Fri', value: 9 }, { day: 'Sat', value: 2 }, { day: 'Sun', value: 1 },
-  ];
+  // Dynamic Chart Data based on dropdown selection
+  const chartData = graphType === 'interview'
+    ? [
+      { name: 'Round I', value: stats?.totalInterviewsRoundI || 0 },
+      { name: 'Round II', value: stats?.totalInterviewsRoundII || 0 },
+      { name: 'Round III', value: stats?.totalInterviewsRoundIII || 0 },
+      { name: 'Online', value: stats?.totalInterviewsOnline || 0 },
+      { name: 'F2F', value: stats?.totalInterviewsFaceToFace || 0 },
+    ]
+    : [
+      { name: 'Resumes', value: stats?.totalApplications || 0 },
+      { name: 'Shortlisted', value: stats?.shortlistedApplications || 0 },
+      { name: 'Hired', value: stats?.hiredApplications || 0 },
+      { name: 'Pending', value: stats?.pendingApplications || 0 },
+    ];
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen font-bold">Loading Stats...</div>;
-
+  if (loading) return <div className="flex items-center justify-center min-h-screen font-black text-slate-400 animate-pulse">LOADING DASHBOARD...</div>;
+  console.log("Current Stats:", stats)
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans text-slate-900 pb-12">
       <main className="max-w-full mx-auto px-6 py-8">
 
-        {/* HEADER & TOP STATS ROW */}
+        {/* HEADER SECTION */}
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 mb-10">
           <div>
             <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Dashboard</h2>
-            <p className="text-slate-500 text-sm font-medium">Welcome, {user?.name || 'User'}</p>
+            <p className="text-slate-500 text-sm font-medium italic">
+              Welcome back, {user?.name || 'User'}
+              <span className="ml-2 text-[10px] bg-slate-200 px-2 py-0.5 rounded text-slate-600 uppercase not-italic font-bold">{user?.role}</span>
+            </p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 w-full xl:w-auto">
             {topRowStats.map((stat, i) => (
               <div key={i} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3">
-                <div className={`${stat.bg} ${stat.color} p-2 rounded-lg`}>
-                  {stat.icon}
-                </div>
+                <div className={`${stat.bg} ${stat.color} p-2 rounded-lg`}>{stat.icon}</div>
                 <div>
                   <p className="text-slate-400 text-[8px] font-black uppercase tracking-widest leading-none mb-1">{stat.label}</p>
                   <p className="text-lg font-black text-slate-800 leading-none">{stat.count}</p>
@@ -91,24 +111,37 @@ const LandingPage = () => {
           </div>
         </div>
 
-        {/* MIDDLE SECTION: CALENDAR & GRAPH */}
+        {/* MIDDLE SECTION: CALENDAR & DYNAMIC GRAPH */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+
+          {/* CALENDAR CARD */}
           <div className="lg:col-span-1 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-            <h3 className="text-xs font-black text-slate-800 mb-6 uppercase tracking-widest flex items-center italic">
-              <CalendarIcon size={18} className="mr-2 text-red-600" /> Event Calendar
-            </h3>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center italic">
+                <CalendarIcon size={18} className="mr-2 text-red-600" /> Event Calendar
+              </h3>
+              <button
+                onClick={handleGoogleSync}
+                className="text-[9px] font-black text-slate-300 hover:text-red-600 transition-colors uppercase tracking-tighter underline underline-offset-4"
+              >
+                Sync Google
+              </button>
+            </div>
             <Calendar onChange={onChange} value={value} className="border-none w-full text-sm font-medium" />
           </div>
 
+          {/* ANALYTICS GRAPH CARD */}
           <div className="lg:col-span-2 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col relative">
             <div className="flex justify-between items-center mb-8">
               <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center italic">
-                <TrendingUp size={18} className="mr-2 text-red-600" /> Interview Analytics
+                <TrendingUp size={18} className="mr-2 text-red-600" />
+                {graphType === 'interview' ? 'Interview Analytics' : 'Candidate Analytics'}
               </h3>
+
               <select
                 value={graphType}
                 onChange={(e) => setGraphType(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] font-black py-2 px-4 rounded-xl focus:outline-none uppercase cursor-pointer"
+                className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] font-black py-2 px-4 rounded-xl focus:outline-none uppercase cursor-pointer hover:bg-slate-100 transition-colors"
               >
                 <option value="interview">Interviews</option>
                 <option value="candidate">Candidates</option>
@@ -117,12 +150,12 @@ const LandingPage = () => {
 
             <div className="flex-grow min-h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={graphType === 'interview' ? interviewData : candidateData}>
+                <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 700 }} dy={10} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 700 }} dy={10} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
                   <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
-                  <Line type="monotone" dataKey="value" stroke="#dc2626" strokeWidth={4} dot={{ r: 4, fill: '#dc2626' }} />
+                  <Line type="monotone" dataKey="value" stroke="#dc2626" strokeWidth={4} dot={{ r: 4, fill: '#dc2626' }} activeDot={{ r: 6 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -145,7 +178,6 @@ const LandingPage = () => {
             </div>
           ))}
         </div>
-
       </main>
 
       <style>{`

@@ -26,7 +26,7 @@ const DisplayCandidate = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await api.get(`/admin/job/${jobId}/candidates`, {
+        const response = await api.get(`/user/job/${jobId}/candidates`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (response.data.success) {
@@ -55,12 +55,12 @@ const DisplayCandidate = () => {
     const email = c.email || '';
     const phone = c.phoneNumber || '';
     const skills = Array.isArray(c.skills) ? c.skills.join(' ') : (c.skills || '');
-    
+
     const status = (c.status || 'Pending').toLowerCase().trim();
     const activeFilter = statusFilter.toLowerCase().trim();
 
     const matchesStatus = activeFilter === 'all' || status === activeFilter;
-    const matchesSearch = 
+    const matchesSearch =
       name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       skills.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -80,7 +80,7 @@ const DisplayCandidate = () => {
       case 'Hired': return 'bg-green-100 text-green-700 border-green-200';
       case 'Shortlisted': return 'bg-blue-50 text-blue-600 border-blue-100';
       case 'Rejected': return 'bg-red-50 text-red-600 border-red-100';
-      case 'Pending': 
+      case 'Pending':
       default: return 'bg-amber-50 text-amber-600 border-amber-100';
     }
   };
@@ -88,7 +88,7 @@ const DisplayCandidate = () => {
   const renderSkills = (skills) => {
     if (!skills) return <span className="text-slate-300 italic">No skills listed</span>;
     const skillsArray = Array.isArray(skills) ? skills : skills.split(',').map(s => s.trim());
-    
+
     return (
       <div className="flex flex-wrap gap-1 mt-1">
         {skillsArray.slice(0, 3).map((skill, idx) => (
@@ -224,7 +224,7 @@ const DisplayCandidate = () => {
                 >
                   <ChevronLeft size={16} />
                 </button>
-                
+
                 {[...Array(totalPages)].map((_, i) => (
                   <button
                     key={i + 1}
@@ -254,7 +254,7 @@ const DisplayCandidate = () => {
           <div className="bg-white w-full max-w-5xl h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
               <h3 className="font-bold text-slate-800">Resume Preview</h3>
-              <button 
+              <button
                 onClick={() => setSelectedFile(null)}
                 className="p-2 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors"
               >

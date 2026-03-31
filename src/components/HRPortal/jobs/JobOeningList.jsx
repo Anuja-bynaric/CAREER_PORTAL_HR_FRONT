@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux'; 
+import { useSelector } from 'react-redux';
 import { api } from '../../../Api/api';
 import { Search, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -24,7 +24,7 @@ const JobOpeningList = () => {
           Authorization: `Bearer ${token}`
         }
       });
-      
+
       if (response.data.success) {
         const jobsData = response.data.data;
 
@@ -33,14 +33,14 @@ const JobOpeningList = () => {
           jobsData.map(async (job) => {
             try {
               // Using your provided endpoint: /job/:jobId/candidates
-              const countResponse = await api.get(`/admin/job/${job.jobId}/candidates`, {
+              const countResponse = await api.get(`/user/job/${job.jobId}/candidates`, {
                 headers: { Authorization: `Bearer ${token}` }
               });
-              
+
               return {
                 ...job,
                 applicants: countResponse.data.count || 0, // Using the 'count' field from your backend response
-                status: job.status || "Active", 
+                status: job.status || "Active",
                 postedDate: new Date(job.createdAt).toLocaleDateString('en-CA'),
                 jobId: job.jobId
               };
@@ -77,7 +77,7 @@ const JobOpeningList = () => {
       job.jobId.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredJobs(results);
-    setCurrentPage(1); 
+    setCurrentPage(1);
   }, [searchTerm, jobs]);
 
   // Logic for Pagination
@@ -97,8 +97,8 @@ const JobOpeningList = () => {
 
           {/* Header Section */}
           <div className="flex items-center gap-4 mb-8">
-            <button 
-              onClick={() => navigate('/landing')} 
+            <button
+              onClick={() => navigate('/landing')}
               className="flex items-center justify-center text-slate-500 hover:text-red-600 transition-colors group"
             >
               <div className="p-2 bg-white rounded-xl shadow-sm border border-gray-100 group-hover:border-red-100 transition-all">
@@ -116,7 +116,7 @@ const JobOpeningList = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
             <div className="relative w-full md:w-96 group">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-red-600 transition-colors" size={18} />
-              <input 
+              <input
                 type="text"
                 placeholder="Search by job title or ID..."
                 value={searchTerm}
@@ -159,7 +159,7 @@ const JobOpeningList = () => {
                     <tr key={job.id} className="hover:bg-slate-50/80 transition-colors group">
                       <td className="px-6 py-5">
                         <span
-                          
+
                           className="text-slate-800 font-medium text-sm cursor-pointer hover:text-red-600 transition-colors"
                         >
                           {job.title}
@@ -186,7 +186,7 @@ const JobOpeningList = () => {
                           >
                             Edit
                           </button>
-                          
+
                           <button
                             onClick={() => navigate(`/job_status_update/${job.jobId}`, { state: { job } })}
                             className="px-3 py-1.5 text-[11px] font-medium text-red-600 bg-red-50 border border-red-100 rounded-md hover:bg-red-100 transition-all shadow-sm"
@@ -222,17 +222,16 @@ const JobOpeningList = () => {
                   >
                     <ChevronLeft size={16} className="text-slate-600" />
                   </button>
-                  
+
                   <div className="flex gap-1">
                     {[...Array(totalPages)].map((_, i) => (
                       <button
                         key={i + 1}
                         onClick={() => setCurrentPage(i + 1)}
-                        className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all ${
-                          currentPage === i + 1 
-                          ? 'bg-red-600 text-white shadow-md shadow-red-100' 
+                        className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all ${currentPage === i + 1
+                          ? 'bg-red-600 text-white shadow-md shadow-red-100'
                           : 'bg-white border border-gray-200 text-slate-600 hover:bg-gray-50'
-                        }`}
+                          }`}
                       >
                         {i + 1}
                       </button>

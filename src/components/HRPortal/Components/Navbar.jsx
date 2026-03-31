@@ -3,8 +3,9 @@ import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { setLogout } from '../../../redux/authSlice';
+import { clearApplicationSession } from '../../../redux/ApplicationSlice';
 import { LogOut, User, ChevronDown } from 'lucide-react';
-import { api } from '../../../Api/api'; 
+import { api } from '../../../Api/api';
 import toast from 'react-hot-toast';
 
 const logo = "/assets/logo.png";
@@ -16,22 +17,24 @@ function Navbar() {
 
     const handleLogout = async () => {
         try {
-            // 1. Call Backend Logout API with required configuration
-            // Using your endpoint: /user/logout with withCredentials: true
-            await api.post('/user/logout', {}, { withCredentials: true }); 
+            await api.post('/user/logout', {}, { withCredentials: true });
 
-            // 2. Clear Redux State using your slice action
+            // 2. Clear BOTH slices now
+            dispatch(clearApplicationSession());
             dispatch(setLogout());
+            // ADD THIS LINE
 
-            // 3. Navigate to the login page (or /career as per your snippet)
+            // 3. Clear Axios headers to be safe
+            delete api.defaults.headers.common['Authorization'];
+
             toast.success("Logged out successfully");
-            navigate('/login'); 
-            
-            console.log("Cookie cleared and state reset");
+            navigate('/login');
+
         } catch (error) {
             console.error("Logout failed:", error);
-            // Force frontend logout even if the network request fails
+            dispatch(clearApplicationSession());
             dispatch(setLogout());
+            // CLEAR HERE TOO
             navigate('/login');
         }
     };

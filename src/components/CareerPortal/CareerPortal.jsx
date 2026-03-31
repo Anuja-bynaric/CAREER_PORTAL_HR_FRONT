@@ -25,10 +25,12 @@ const CareerPortal = () => {
     try {
       const response = await api.get('/admin/all/jobs');
       if (response.data.success) {
-        const jobs = response.data.data;
+        const openJobs = response.data.data.filter(
+          (job) => job.status?.toLowerCase() === "open"
+        );
         console.log("ACTUAL API DATA:", response.data.data[0]);
-        setAllJobs(jobs);
-        setFilteredJobs(jobs);
+        setAllJobs(openJobs);
+        setFilteredJobs(openJobs);
       }
     } catch (err) {
       console.error("Error fetching jobs:", err);
