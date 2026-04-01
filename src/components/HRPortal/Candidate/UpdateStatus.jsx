@@ -1,18 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, ClipboardEdit, ChevronDown, Check } from 'lucide-react';
-import { useSelector } from 'react-redux'; 
-import { api } from '../../../Api/api'; 
+import { useSelector } from 'react-redux';
+import { api } from '../../../Api/api';
 import toast from 'react-hot-toast';
 
 const UpdateStatus = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const { candidateId } = useParams(); 
-  
+  const { candidateId } = useParams();
+
   const { user } = useSelector((state) => state.auth);
-  const token = user?.token || localStorage.getItem('token'); 
-  
+  const token = user?.token;
+
   const candidate = state?.candidate;
 
   const [status, setStatus] = useState(candidate?.status?.toLowerCase() || 'shortlisted');
@@ -23,7 +23,10 @@ const UpdateStatus = () => {
 
   const statusOptions = [
     { value: 'pending', label: 'Pending', color: 'bg-amber-400' },
-    { value: 'shortlisted', label: 'Shortlisted', color: 'bg-blue-500' },
+    { value: 'shortlisted', label: 'Shortlisted', color: 'bg-blue-400' },
+    { value: 'shortlisted for Technical Round', label: 'shortlisted for Technical Round', color: 'bg-indigo-500' },
+    { value: 'shortlisted for HR Round', label: 'shortlisted for HR Round', color: 'bg-purple-500' },
+    { value: 'shortlisted for Managerial Round', label: 'shortlisted for Managerial Round', color: 'bg-cyan-500' },
     { value: 'rejected', label: 'Rejected', color: 'bg-rose-500' },
     { value: 'hired', label: 'Hired', color: 'bg-emerald-500' }
   ];
@@ -40,7 +43,7 @@ const UpdateStatus = () => {
 
   const handleUpdate = async (e) => {
     if (e) e.preventDefault();
-    if (!token) {
+    if (!user) {
       toast.error("Session expired. Please log in.");
       return;
     }
@@ -54,18 +57,12 @@ const UpdateStatus = () => {
     const toastId = toast.loading("Updating...");
     try {
       const response = await api.patch(
-        `/user/${targetId}/status`, 
+        `/user/${targetId}/status`,
         { status: status, notes: note },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
       );
       if (response.data.success) {
         toast.success("Updated!", { id: toastId });
-        setTimeout(() => navigate(-1), 800); 
+        setTimeout(() => navigate(-1), 800);
       }
     } catch (error) {
       toast.error("Failed to update.", { id: toastId });
@@ -79,14 +76,14 @@ const UpdateStatus = () => {
   return (
     <div className="min-h-screen bg-[#f8fafc] p-4 font-sans flex items-start justify-center">
       <div className="max-w-sm w-full">
-        <button 
-          onClick={() => navigate(-1)} 
+        <button
+          onClick={() => navigate(-1)}
           className="flex items-center gap-1.5 text-slate-400 hover:text-red-600 mb-4 font-black text-[8px] uppercase tracking-[0.2em] transition-all"
         >
-          <ArrowLeft size={10}/> Back
+          <ArrowLeft size={10} /> Back
         </button>
 
-        <div className="bg-white rounded-[1.2rem] shadow-2xl shadow-slate-200/60 overflow-hidden border border-slate-100">
+        <div className="bg-white rounded-[1.2rem] shadow-2xl shadow-slate-200/60 border border-slate-100 relative">
           <div className="h-1.5 bg-red-600"></div>
           <div className="p-5">
             <div className="flex justify-between items-center mb-5">
@@ -104,7 +101,7 @@ const UpdateStatus = () => {
             <div className="space-y-4">
               <div className="relative" ref={dropdownRef}>
                 <label className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-0.5">Application Status</label>
-                
+
                 <button
                   type="button"
                   onClick={() => !loading && setIsOpen(!isOpen)}
@@ -112,34 +109,39 @@ const UpdateStatus = () => {
                 >
                   <div className="flex items-center gap-2">
                     <div className={`w-1.5 h-1.5 rounded-full ${statusOptions.find(o => o.value === status)?.color}`} />
-                    <span className="uppercase tracking-wider font-black">{status}</span>
+                    <span className="uppercase tracking-wider font-black truncate max-w-[150px]">
+                      {status}
+                    </span>
                   </div>
                   <ChevronDown size={10} className={`text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {isOpen && (
-                  <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200/60 rounded-xl shadow-2xl shadow-slate-300/40 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
-                    <div className="bg-slate-900 px-3 py-1.5 flex items-center justify-between">
-                      <span className="text-white text-[7px] font-black uppercase tracking-[0.2em]">Select New Status</span>
+                  <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 shadow-2xl rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200 flex flex-col">
+                    {/* Sticky Header stays at the top */}
+                    <div className="shrink-0 bg-slate-900 px-3 py-2 flex items-center justify-between">
+                      <span className="text-white text-[7px] font-black uppercase tracking-widest">Select New Status</span>
                       <div className="w-1 h-1 rounded-full bg-red-500 animate-pulse"></div>
                     </div>
-                    
-                    <div className="p-1">
+
+                    {/* Scrollable Area - Fixed height and auto overflow */}
+                    <div className="overflow-y-auto max-h-[160px] p-1 bg-white">
                       {statusOptions.map((option) => (
                         <button
                           key={option.value}
                           type="button"
-                          onClick={() => { setStatus(option.value); setIsOpen(false); }}
-                          className={`w-full text-left px-3 py-2 rounded-lg text-[9px] font-black uppercase tracking-tight transition-all flex items-center justify-between group
-                            ${status === option.value 
-                              ? 'bg-slate-100 text-slate-900' 
-                              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                          onClick={() => {
+                            setStatus(option.value);
+                            setIsOpen(false);
+                          }}
+                          className={`w-full text-left px-3 py-2.5 rounded-lg text-[8px] font-black uppercase tracking-tight transition-all flex items-center justify-between group mb-0.5
+            ${status === option.value ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:bg-slate-50'}`}
                         >
-                          <div className="flex items-center gap-2">
-                             <div className={`w-1 h-1 rounded-full ${option.color} group-hover:scale-125 transition-transform`} />
-                             {option.label}
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className={`shrink-0 w-1.5 h-1.5 rounded-full ${option.color}`} />
+                            <span className="truncate">{option.label}</span>
                           </div>
-                          {status === option.value && <Check size={10} className="text-red-600" />}
+                          {status === option.value && <Check size={10} className="text-red-600 shrink-0 ml-2" />}
                         </button>
                       ))}
                     </div>
@@ -149,7 +151,7 @@ const UpdateStatus = () => {
 
               <div>
                 <label className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-0.5">Internal Feedback</label>
-                <textarea 
+                <textarea
                   rows="2"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
@@ -160,16 +162,16 @@ const UpdateStatus = () => {
               </div>
 
               <div className="flex gap-2 pt-1">
-                <button 
+                <button
                   type="button"
                   onClick={handleUpdate}
                   disabled={loading}
                   className="flex-1 bg-slate-900 hover:bg-red-600 text-white h-10 rounded-lg font-black text-[9px] uppercase tracking-[0.15em] flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-slate-200"
                 >
-                  <Save size={12}/> {loading ? 'Updating...' : 'Save Status'}
+                  <Save size={12} /> {loading ? 'Updating...' : 'Save Status'}
                 </button>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => navigate(-1)}
                   className="px-4 bg-white border border-slate-200 text-slate-400 h-10 rounded-lg font-black text-[8px] uppercase tracking-widest transition-all hover:bg-slate-50 hover:text-slate-600"
                 >

@@ -12,7 +12,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { SKILL_GROUPS } from './skillsData';
 import { clearApplicationSession, setApplicationSession } from '../../redux/ApplicationSlice.js';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+//const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initialUser }) => {
   const { jobId } = useParams(); // Grabs 'jobId' from the URL path
@@ -160,8 +160,7 @@ const JobDetailView = ({ onBack, onLoginSuccess, onAppliedSuccess, user: initial
       // If your login logic saves the token to a DIFFERENT slice (like 'auth'), 
       // you must update your useSelector at the top of this file!
       // ... inside handleFormSubmit, after axios.post
-      const response = await axios.post(`${API_BASE_URL}/user/applyJob`, data, {
-        withCredentials: true,
+      const response = await api.post('/user/applyJob', data, {
         headers: {
           'Content-Type': 'multipart/form-data',
           ...(finalToken && { 'Authorization': `Bearer ${finalToken}` })

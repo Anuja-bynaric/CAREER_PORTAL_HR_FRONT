@@ -42,13 +42,21 @@ const CandidateProfile = () => {
     }
   };
 
-  const getStatusStyles = (status) => {
-    const s = status?.toLowerCase().trim();
-    if (s === 'selected' || s === 'hired') return 'bg-green-100 text-green-700 border-green-200';
-    if (s === 'shortlisted' || s === 'scheduled') return 'bg-blue-100 text-blue-700 border-blue-200';
-    if (s === 'rejected') return 'bg-red-100 text-red-700 border-red-200';
-    return 'bg-gray-100 text-gray-700 border-gray-200';
-  };
+ const getStatusStyles = (status) => {
+  const s = status?.toLowerCase().trim();
+  
+  // Hired/Selected
+  if (s === 'selected' || s === 'hired') return 'bg-green-100 text-green-700 border-green-200';
+  
+  // All Shortlisted Rounds
+  if (s.includes('shortlisted')) return 'bg-blue-100 text-blue-700 border-blue-200';
+  
+  // Rejected
+  if (s === 'rejected') return 'bg-red-100 text-red-700 border-red-200';
+  
+  // Default/Pending
+  return 'bg-gray-100 text-gray-700 border-gray-200';
+};
 
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4">
