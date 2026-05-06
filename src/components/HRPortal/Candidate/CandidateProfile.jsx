@@ -31,9 +31,10 @@ const CandidateProfile = () => {
         appliedAt: data.applied_at,
         skills: data.skills || [], 
         profileImage: data.profileImage || null,
-        resumeSummary: data.resumeSummary || "No summary available for this candidate.",
-        aiScore: data.aiScore || 0, 
+        resumeSummary: data.summary || "No summary available for this candidate.",
+        aiScore: data.matchScore || 0, 
       });
+      console.log("ATS scores", data.matchScore)
     } catch (error) {
       console.error("Error fetching candidate:", error);
       toast.error("Failed to load candidate profile");
@@ -104,9 +105,9 @@ const CandidateProfile = () => {
                 </span>
                 
                 {/* COMPACT AI SCORE PILL */}
-                <div className="flex items-center gap-1.5 bg-[#0a0f1c] px-2 py-0.5 rounded-full border border-slate-800">
-                  <Target size={8} className="text-blue-500" />
-                  <span className="text-blue-500 font-black text-[9px]">{candidate.aiScore}%</span>
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-slate-800">
+                  <Target size={8} className="text-red-500" />
+                  <span className="text-blue-500 font-black text-[9px]">{candidate?.aiScore}%</span>
                 </div>
               </div>
             </div>
